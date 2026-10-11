@@ -183,6 +183,7 @@ table.bom input{width:64px;border:1px solid var(--line);background:var(--bg);bor
 /* modal */
 .modal{position:fixed;inset:0;background:rgba(10,18,22,.45);display:flex;align-items:center;justify-content:center;padding:16px;z-index:20}
 .modal .card{background:var(--panel);border:1px solid var(--line);border-radius:10px;max-width:560px;width:100%;padding:16px;display:flex;flex-direction:column;gap:12px;max-height:90%;overflow:auto}
+.modal a{color:var(--sea)}
 .modal h3{margin:0;font:800 22px/1 var(--f-display);text-transform:uppercase}
 .modal textarea{width:100%;min-height:140px;border:1px solid var(--line);border-radius:6px;background:var(--bg);font:12px var(--f-mono);padding:8px}
 .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:8px 14px;border-radius:6px;z-index:30;font-size:13px}
@@ -642,6 +643,7 @@ function renderLayers(){
 }
 
 /* ---------- map underlay (web mercator tiles, fetched by the viewer's browser) ---------- */
+const FULL_URL='https://raw.githack.com/pocoyo-roe/North-landing/ccr-9f2ac93c-wd0lch/index.html';
 const TILES={
   satellite:{url:(z,x,y)=>`https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${z}/${y}/${x}`,max:19,attr:'Imagery © Esri, Maxar, Earthstar Geographics'},
   street:{url:(z,x,y)=>`https://tile.openstreetmap.org/${z}/${x}/${y}.png`,max:19,attr:'© OpenStreetMap contributors'},
@@ -794,7 +796,7 @@ function renderHint(){
     h=`<div class="hint">Measured ${fx(L)} m.${S.bg?` Real length <input id="cal-len" type="number" step="0.01" value="${fx(L)}" style="width:70px;background:var(--bg);color:var(--ink);border:0;border-radius:3px;padding:2px 4px"> m <button data-act="calibrate">Scale photo to this</button>`:''}<button data-act="remeasure">Again</button><button data-act="cancel">Done</button></div>`}
     else h=`<div class="hint">Measure: click two points.${S.bg?' Measure a known length on the photo to scale it.':''}<button data-act="cancel">Done</button></div>`}
   else if(mode==='movemap')h=`<div class="hint">Drag the map until the real spot sits under your design. Your layout stays put.<button data-act="cancel">Done</button></div>`;
-  else if(tileState.blocked&&S.site.map!=='off')h=`<div class="hint">This viewer blocks map images. Open index.html from the repository in a normal browser to see the map, or paste a screenshot under Site photo underlay.<button data-act="mapoff">Hide map</button></div>`;
+  else if(tileState.blocked&&S.site.map!=='off'&&!S.bg)h=`<div class="hint">This viewer can't show map images. <a href="${FULL_URL}" target="_blank" rel="noopener" style="color:inherit;font-weight:600">Open the full version</a> where the map works, or add a screenshot of the site.<button data-act="shot">Add screenshot</button><button data-act="mapoff">Hide map</button></div>`;
   else if(S.example&&S.items.length)h=`<div class="hint">Example layout. Edit it, or start from a blank site.<button data-act="blank">Blank site</button><button data-act="keep">Keep editing</button></div>`;
   $('#hintwrap').innerHTML=h;
 }
@@ -896,6 +898,7 @@ $('#hintwrap').addEventListener('click',e=>{const b=e.target.closest('button');i
   if(a==='finish')finishDraw();else if(a==='cancel'){drawPts=null;setMode('select')}else if(a==='remeasure'){measure=null;renderPlan();renderHint()}
   else if(a==='blank'){showModal('blank')}else if(a==='keep'){S.example=false;commit()}
   else if(a==='mapoff'){S.site.map='off';commit()}
+  else if(a==='shot'){showModal('bg')}
   else if(a==='calibrate'){const real=parseFloat($('#cal-len').value),L=Math.hypot(measure.b[0]-measure.a[0],measure.b[1]-measure.a[1]);if(real>0&&L>0&&S.bg){const k=real/L,A=measure.a;S.bg.mpp*=k;S.bg.x=A[0]+(S.bg.x-A[0])*k;S.bg.y=A[1]+(S.bg.y-A[1])*k;measure=null;mode='select';commit();toast('Photo scaled: '+fx(real)+' m')}}});
 
 /* ---------- palette ---------- */
@@ -940,7 +943,7 @@ function showModal(kind,payload){
     <div class="row"><button class="btn" data-m="paste">Load pasted design</button><button class="btn" data-m="ex">Load example</button><button class="btn danger" data-m="blankask">Start blank site</button><span style="flex:1"></span><button class="btn" data-m="close">Close</button></div><div id="m-msg" class="note"></div>`;
   if(kind==='blank')h=`<h3>Start a blank site?</h3><p>This clears every item and run from the plan. Site settings and rates stay. You can undo it.</p><div class="row"><button class="btn danger" data-m="blank">Clear the plan</button><button class="btn" data-m="close">Cancel</button></div>`;
   if(kind==='text')h=`<h3>Copy this</h3><p class="note">Your browser blocked the clipboard. Select all and copy.</p><textarea id="m-text" readonly>${esc(payload)}</textarea><div class="row"><button class="btn" data-m="close">Close</button></div>`;
-  if(kind==='bg'){const b=S.bg;h=`<h3>Site photo underlay</h3><p class="note">Add an aerial screenshot, OS extract or survey drawing of the spot (or paste one with Ctrl+V / ⌘V), then trace over it. Scale it by measuring something of known length with Measure / calibrate.</p>
+  if(kind==='bg'){const b=S.bg;h=`<h3>Site photo underlay</h3>${b?`<p class="note">Trace over the image. To rescale, use Measure / calibrate on something of known length.</p>`:`<ol class="note" style="margin:0;padding-left:18px;display:grid;gap:4px"><li>Open the <a href="https://www.google.com/maps/@${S.site.lat},${S.site.lon},150m/data=!3m1!1e3" target="_blank" rel="noopener">satellite view of North Landing</a> and zoom to the spot. Make sure the scale bar (bottom right) is in the shot.</li><li>Take a screenshot.</li><li>Come back and press Ctrl+V (⌘V on a Mac), or choose the image below. On a phone, save the screenshot and choose it.</li><li>Pick Measure / calibrate, click both ends of the map's scale bar and type its length. The photo snaps to the right scale.</li></ol>`}
     <div class="row"><button class="btn primary" data-m="pick">${b?'Replace image':'Choose image'}</button>${b?'<button class="btn danger" data-m="bgdel">Remove</button>':''}</div>
     ${b?`<div class="pane" style="padding:0">${fNum('b:x','Position x',b.x,0.5)}${fNum('b:y','Position y',b.y,0.5)}${fNum('b:rot','Rotation',b.rot,1,'°')}${fNum('b:width','Width on plan',b.mpp*b.iw,0.5)}<label class="fld"><span>Opacity</span><span class="inp"><input id="f-b-opacity" type="range" min="0.1" max="1" step="0.05" value="${b.opacity}" data-bbind="opacity"></span></label></div>`:''}
     <div class="row"><span style="flex:1"></span><button class="btn" data-m="close">Close</button></div>`}
