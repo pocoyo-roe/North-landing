@@ -14,6 +14,7 @@ Open `index.html` in any modern browser. Nothing to install; designs autosave in
 - **3D view** with sun shadows for any date and time at the site's latitude.
 - **Costs**: an editable, indicative budget with contingency. Copy it out as CSV.
 - **Checks**: site-specific issues to brief your designer, Building Control, Yorkshire Water and the planners. Covers guarding, steps, backflow protection for a mains-fed plunge (fluid category 5), pipe cover, plunge water disposal, wood-stove fire safety, wind and salt exposure, and the Heritage Coast / SSSI / SAC / SPA designations around Flamborough Head.
-- **Site photo underlay**: load an aerial screenshot or survey, then use Measure / calibrate on a known length to scale it.
+- **Map underlay**: satellite imagery (Esri) or OpenStreetMap, drawn to the same scale as the plan and centred on the site's latitude/longitude (default: North Landing car park, OS grid TA 23868 71935). Use **Move map under design** in the Site tab to slide the real spot under your layout, or switch it with the Map button on the plan. Your browser fetches the tiles, so this needs an internet connection. The Claude artifact viewer blocks external images, so open `index.html` in a normal browser to see the map.
+- **Site photo underlay**: load an aerial screenshot or survey, or paste a screenshot with Ctrl+V / ⌘V, then use Measure / calibrate on a known length to scale it.
 
 Prices and regulatory notes are guidance for early design. Confirm them with suppliers, Building Control, Yorkshire Water, East Riding of Yorkshire Council and Natural England.
