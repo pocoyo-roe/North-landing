@@ -1,0 +1,1019 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>North Landing Sauna Designer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;800&family=Public+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one-screen drafting workspace — tool rail | drawing stage | calculation sheet. Collapses to a scrolling stack on phones. */
+:root{
+  --bg:#e9ece7;        /* chalk */
+  --panel:#f7f8f5;
+  --ink:#16242a;       /* North Sea slate */
+  --muted:#5a686c;
+  --line:#c9d0ca;
+  --accent:#b4532a;    /* coble red / weathered larch */
+  --accent-ink:#ffffff;
+  --sea:#2c6b78;
+  --timber:#d4b07a;
+  --timber-2:#b48d55;
+  --cedar:#8a5536;
+  --water:#8cc2cf;
+  --grid:rgba(22,36,42,.07);
+  --grid-major:rgba(22,36,42,.16);
+  --ok:#2f7d4a; --warn:#a86a00; --bad:#b3261e; --info:#2c6b78;
+  --ok-bg:rgba(47,125,74,.12); --warn-bg:rgba(168,106,0,.13); --bad-bg:rgba(179,38,30,.12); --info-bg:rgba(44,107,120,.12);
+  --mains:#1f6fd1; --drain:#7a5a2b; --power:#d97a00;
+  --f-display:"Big Shoulders Display","Arial Narrow",Impact,sans-serif;
+  --f-body:"Public Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0e181c; --panel:#142228; --ink:#e3eae7; --muted:#93a4a6; --line:#29404a;
+  --accent:#e2804e; --accent-ink:#1a0d06; --sea:#6db2c0; --timber:#8d7148; --timber-2:#6f5735; --cedar:#6e4229; --water:#3b7d8d;
+  --grid:rgba(227,234,231,.06); --grid-major:rgba(227,234,231,.14);
+  --ok:#62c487; --warn:#e2a93b; --bad:#f07167; --info:#6db2c0;
+  --ok-bg:rgba(98,196,135,.14); --warn-bg:rgba(226,169,59,.15); --bad-bg:rgba(240,113,103,.15); --info-bg:rgba(109,178,192,.14);
+  --mains:#5aa2ff; --drain:#c49a5c; --power:#ffab3d; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0e181c; --panel:#142228; --ink:#e3eae7; --muted:#93a4a6; --line:#29404a;
+  --accent:#e2804e; --accent-ink:#1a0d06; --sea:#6db2c0; --timber:#8d7148; --timber-2:#6f5735; --cedar:#6e4229; --water:#3b7d8d;
+  --grid:rgba(227,234,231,.06); --grid-major:rgba(227,234,231,.14);
+  --ok:#62c487; --warn:#e2a93b; --bad:#f07167; --info:#6db2c0;
+  --ok-bg:rgba(98,196,135,.14); --warn-bg:rgba(226,169,59,.15); --bad-bg:rgba(240,113,103,.15); --info-bg:rgba(109,178,192,.14);
+  --mains:#5aa2ff; --drain:#c49a5c; --power:#ffab3d; color-scheme:dark}
+
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 var(--f-body)}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.app{height:100%;display:grid;grid-template-rows:auto minmax(0,1fr);padding-inline:16px;padding-block:10px 12px;gap:10px}
+
+/* header */
+header.top{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.brand{display:flex;flex-direction:column;min-width:0}
+.brand h1{margin:0;font:800 26px/1 var(--f-display);letter-spacing:.02em;text-transform:uppercase;text-wrap:balance}
+.brand .loc{font:12px/1.3 var(--f-mono);color:var(--muted)}
+.brand .loc a{color:var(--sea)}
+.tb{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap}
+.btn{border:1px solid var(--line);background:var(--panel);border-radius:6px;padding:6px 10px;cursor:pointer;line-height:1.2}
+.btn:hover{border-color:var(--ink)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:600}
+.btn.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.btn.danger{color:var(--bad)}
+.btn:disabled{opacity:.4;cursor:default}
+
+/* main grid */
+main.work{display:grid;grid-template-columns:196px minmax(0,1fr) 340px;gap:10px;min-height:0}
+.rail,.sheet{background:var(--panel);border:1px solid var(--line);border-radius:8px;min-height:0;overflow:auto}
+.rail{padding:10px;display:flex;flex-direction:column;gap:14px}
+.rail h2,.sheet h3{font:600 11px/1 var(--f-body);letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin:0 0 6px}
+.pal{display:grid;grid-template-columns:1fr;gap:4px}
+.pal button{display:flex;align-items:center;gap:8px;text-align:left;border:1px solid transparent;background:transparent;border-radius:6px;padding:5px 6px;cursor:pointer}
+.pal button:hover{border-color:var(--line);background:var(--bg)}
+.pal button.on{border-color:var(--ink);background:var(--bg)}
+.sw{width:18px;height:14px;border-radius:2px;flex:none;border:1px solid rgba(0,0,0,.2)}
+.layers{display:flex;flex-direction:column;gap:2px;font-size:13px}
+.layers button{all:unset;cursor:pointer;padding:3px 6px;border-radius:4px;display:flex;justify-content:space-between;gap:6px}
+.layers button span:last-child{font:11px var(--f-mono);color:var(--muted)}
+.layers button:hover{background:var(--bg)}
+.layers button.on{background:var(--ink);color:var(--bg)}
+.layers button.on span:last-child{color:var(--bg)}
+.small{font-size:12px;color:var(--muted)}
+
+/* stage */
+.stage{position:relative;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--bg);min-height:0}
+#plan{width:100%;height:100%;display:block;touch-action:none;user-select:none;-webkit-user-select:none;cursor:default}
+#plan.panning{cursor:grabbing}
+#plan.drawing{cursor:crosshair}
+#view3d{position:absolute;inset:0}
+#view3d canvas{display:block;width:100%;height:100%;touch-action:none;cursor:grab}
+.ov{position:absolute;pointer-events:none}
+.ov > *{pointer-events:auto}
+.ov.tl{top:10px;left:10px}
+.ov.tr{top:10px;right:10px;display:flex;gap:4px}
+.ov.bl{bottom:10px;left:10px}
+.ov.br{bottom:10px;right:10px;display:flex;gap:4px}
+.ov.tc{top:10px;left:50%;transform:translateX(-50%);max-width:70%}
+.seg{display:flex;border:1px solid var(--line);border-radius:6px;overflow:hidden;background:var(--panel)}
+.seg button{border:0;background:transparent;padding:6px 12px;cursor:pointer}
+.seg button.on{background:var(--ink);color:var(--bg)}
+.hint{background:var(--ink);color:var(--bg);border-radius:6px;padding:6px 10px;font-size:12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.hint button{border:1px solid currentColor;background:transparent;color:inherit;border-radius:4px;padding:2px 8px;cursor:pointer}
+.compass{background:color-mix(in srgb,var(--panel) 88%,transparent);border:1px solid var(--line);border-radius:8px;padding:6px;font:10px var(--f-mono);color:var(--muted)}
+.compass svg{display:block}
+.scalebar{font:11px var(--f-mono);color:var(--ink);background:color-mix(in srgb,var(--panel) 85%,transparent);padding:4px 6px;border-radius:4px}
+.scalebar i{display:block;height:6px;border:2px solid var(--ink);border-top:0;margin-top:2px}
+
+/* plan svg classes */
+.deck{fill:var(--timber);stroke:var(--timber-2)}
+.board{stroke:var(--timber-2);stroke-opacity:.55}
+.stepr{fill:var(--timber);stroke:var(--ink)}
+.cedar{fill:var(--cedar);stroke:var(--ink)}
+.inner{fill:none;stroke:var(--bg);stroke-opacity:.55}
+.water{fill:var(--water);stroke:var(--sea)}
+.thing{fill:var(--panel);stroke:var(--ink)}
+.pave{fill:var(--line);stroke:var(--muted)}
+.guard{stroke:var(--accent);stroke-linecap:round}
+.ink{stroke:var(--ink);fill:none}
+.lbl{fill:var(--ink);font-family:var(--f-body);font-weight:600;paint-order:stroke;stroke:var(--bg);stroke-opacity:.85;pointer-events:none}
+.lbl2{fill:var(--muted);font-family:var(--f-mono);paint-order:stroke;stroke:var(--bg);stroke-opacity:.85;pointer-events:none}
+.contour{stroke:var(--sea);stroke-opacity:.35;fill:none}
+.contourl{fill:var(--sea);font-family:var(--f-mono);opacity:.8;pointer-events:none}
+.it{cursor:move}
+.it.sel > :first-child{stroke:var(--accent)}
+.hdl{fill:var(--panel);stroke:var(--accent);cursor:nwse-resize}
+.hdl.rot{cursor:grab;fill:var(--accent)}
+.selbox{fill:none;stroke:var(--accent);stroke-dasharray:4 3}
+.svc{fill:none;stroke-linejoin:round;stroke-linecap:round;cursor:pointer}
+.svc.mains{stroke:var(--mains)} .svc.drain{stroke:var(--drain)} .svc.power{stroke:var(--power)}
+.vtx{fill:var(--panel);stroke:var(--accent);cursor:move}
+.meas{stroke:var(--accent);fill:none}
+
+/* sheet */
+.sheet{display:flex;flex-direction:column}
+.tabs{flex:none;display:flex;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--panel);z-index:2;overflow-x:auto}
+.tabs button{flex:1;border:0;background:transparent;padding:10px 6px;cursor:pointer;border-bottom:2px solid transparent;font-weight:500;white-space:nowrap}
+.tabs button.on{border-bottom-color:var(--accent);color:var(--ink)}
+.tabs button:not(.on){color:var(--muted)}
+.pane{padding:12px;display:flex;flex-direction:column;gap:14px;min-width:0}
+.pane section{display:flex;flex-direction:column;gap:8px}
+.fld{display:grid;grid-template-columns:minmax(0,1fr) 140px;align-items:center;gap:8px}
+.fld > span:first-child{color:var(--muted);font-size:13px}
+.inp{display:flex;align-items:center;border:1px solid var(--line);border-radius:5px;background:var(--bg);overflow:hidden}
+.inp input,.inp select{border:0;background:transparent;padding:5px 6px;width:100%;min-width:0;font-family:var(--f-mono);font-size:13px}
+.inp select{font-family:var(--f-body)}
+.inp em{font:normal 11px var(--f-mono);color:var(--muted);padding-right:6px}
+.inp input[type=checkbox]{width:auto;margin:6px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.read{border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.read div{display:flex;justify-content:space-between;gap:10px;padding:5px 8px;border-top:1px solid var(--line);font-size:13px}
+.read div:first-child{border-top:0}
+.read b{font:500 13px var(--f-mono);font-variant-numeric:tabular-nums;text-align:right}
+.chip{display:inline-flex;align-items:center;gap:4px;font:600 11px/1 var(--f-body);letter-spacing:.04em;text-transform:uppercase;padding:4px 7px;border-radius:999px;white-space:nowrap}
+.chip.ok{color:var(--ok);background:var(--ok-bg)} .chip.warn{color:var(--warn);background:var(--warn-bg)}
+.chip.bad{color:var(--bad);background:var(--bad-bg)} .chip.info{color:var(--info);background:var(--info-bg)}
+.empty{color:var(--muted);font-size:13px;border:1px dashed var(--line);border-radius:6px;padding:12px}
+.row{display:flex;gap:6px;flex-wrap:wrap}
+.note{font-size:12px;color:var(--muted)}
+.check{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 10px;padding:10px;border:1px solid var(--line);border-radius:6px;border-left-width:4px}
+.check.ok{border-left-color:var(--ok)} .check.warn{border-left-color:var(--warn)} .check.bad{border-left-color:var(--bad)} .check.info{border-left-color:var(--info)}
+.check h4{margin:0;font-size:13px;font-weight:600}
+.check p{margin:0;font-size:12.5px;color:var(--muted);grid-column:2}
+.check label{grid-column:2;font-size:12px;display:flex;gap:6px;align-items:center;color:var(--muted)}
+.tblw{overflow-x:auto}
+table.bom{width:100%;border-collapse:collapse;font-size:12.5px}
+table.bom th{font:600 10.5px var(--f-body);letter-spacing:.07em;text-transform:uppercase;color:var(--muted);text-align:left;padding:4px 4px;border-bottom:1px solid var(--line)}
+table.bom td{padding:4px 4px;border-bottom:1px solid var(--line);vertical-align:top}
+table.bom td.n{font-family:var(--f-mono);text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+table.bom tr.g td{font:600 11px var(--f-body);text-transform:uppercase;letter-spacing:.07em;color:var(--sea);padding-top:10px}
+table.bom input{width:64px;border:1px solid var(--line);background:var(--bg);border-radius:4px;padding:2px 4px;font:12px var(--f-mono);text-align:right}
+.total{display:flex;justify-content:space-between;align-items:baseline;font:800 28px/1 var(--f-display);border-top:2px solid var(--ink);padding-top:8px}
+.total small{font:12px var(--f-body);color:var(--muted)}
+.sun{display:flex;gap:10px;align-items:center}
+
+/* modal */
+.modal{position:fixed;inset:0;background:rgba(10,18,22,.45);display:flex;align-items:center;justify-content:center;padding:16px;z-index:20}
+.modal .card{background:var(--panel);border:1px solid var(--line);border-radius:10px;max-width:560px;width:100%;padding:16px;display:flex;flex-direction:column;gap:12px;max-height:90%;overflow:auto}
+.modal h3{margin:0;font:800 22px/1 var(--f-display);text-transform:uppercase}
+.modal textarea{width:100%;min-height:140px;border:1px solid var(--line);border-radius:6px;background:var(--bg);font:12px var(--f-mono);padding:8px}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:8px 14px;border-radius:6px;z-index:30;font-size:13px}
+
+@media (max-width: 980px){
+  html,body{height:auto}
+  .app{height:auto}
+  main.work{grid-template-columns:minmax(0,1fr)}
+  .stage{height:62vh;min-height:360px;order:1}
+  .rail{order:2;overflow:visible}
+  .sheet{order:3;overflow:visible}
+  .pal{grid-template-columns:repeat(auto-fill,minmax(140px,1fr))}
+  .tabs{top:env(safe-area-inset-top,0px)}
+}
+@media (max-width: 480px){
+  .brand h1{font-size:22px}
+  .fld{grid-template-columns:minmax(0,1fr) 120px}
+  .ov.tc{max-width:none;left:10px;right:10px;top:auto;bottom:48px;transform:none}
+  .compass{padding:3px}.compass svg{width:78px;height:78px}.compass div{display:none}
+}
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="brand">
+      <h1>North Landing Sauna Designer</h1>
+      <div class="loc" id="loc">North Landing, Flamborough · East Riding of Yorkshire</div>
+    </div>
+    <div class="tb">
+      <button class="btn" id="b-undo" title="Undo (Ctrl+Z)">Undo</button>
+      <button class="btn" id="b-redo" title="Redo (Ctrl+Shift+Z)">Redo</button>
+      <button class="btn" id="b-file">Save &amp; load</button>
+    </div>
+  </header>
+
+  <main class="work">
+    <aside class="rail" aria-label="Tools">
+      <div>
+        <h2>Add to plan</h2>
+        <div class="pal" id="pal"></div>
+      </div>
+      <div>
+        <h2>Services</h2>
+        <div class="pal" id="pal-svc"></div>
+      </div>
+      <div>
+        <h2>Tools</h2>
+        <div class="pal">
+          <button id="t-measure"><span class="sw" style="background:transparent;border-color:var(--accent)"></span>Measure / calibrate</button>
+          <button id="t-bg"><span class="sw" style="background:var(--line)"></span>Site photo underlay</button>
+          <button id="t-fit"><span class="sw" style="background:transparent"></span>Zoom to design</button>
+        </div>
+        <input type="file" id="bg-file" accept="image/*" hidden>
+      </div>
+      <div>
+        <h2>On the plan</h2>
+        <div class="layers" id="layers"></div>
+      </div>
+    </aside>
+
+    <div class="stage" id="stage">
+      <svg id="plan" aria-label="Site plan"></svg>
+      <div id="view3d" hidden></div>
+      <div class="ov tl"><div class="compass" id="compass"></div></div>
+      <div class="ov tr"><div class="seg" role="tablist"><button id="v-plan" class="on">Plan</button><button id="v-3d">3D</button></div></div>
+      <div class="ov tc" id="hintwrap"></div>
+      <div class="ov bl"><div class="scalebar" id="scalebar"></div></div>
+      <div class="ov br" id="zoombtns"><button class="btn" id="z-out" aria-label="Zoom out">−</button><button class="btn" id="z-in" aria-label="Zoom in">+</button></div>
+    </div>
+
+    <aside class="sheet" aria-label="Details">
+      <div class="tabs" role="tablist">
+        <button data-tab="inspect" class="on">Selected</button>
+        <button data-tab="site">Site</button>
+        <button data-tab="water">Water</button>
+        <button data-tab="costs">Costs</button>
+        <button data-tab="checks">Checks</button>
+      </div>
+      <div class="pane" id="pane"></div>
+    </aside>
+  </main>
+</div>
+<div id="modal" class="modal" hidden></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+"use strict";
+/* ============================================================
+   North Landing Sauna Designer
+   Units: metres (plan), mm where noted. Plan x → east-ish, y → down.
+   ============================================================ */
+const $=s=>document.querySelector(s);
+const D2R=Math.PI/180, R2D=180/Math.PI;
+const uid=()=>Math.random().toString(36).slice(2,9);
+const fx=(v,n=2)=>(Math.round(v*10**n)/10**n).toFixed(n);
+const gbp=v=>'£'+Math.round(v).toLocaleString('en-GB');
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const clone=o=>JSON.parse(JSON.stringify(o));
+const snapV=v=>S.ui.snap?Math.round(v/0.05)*0.05:v;
+
+/* ---------- catalogue ---------- */
+const TYPES={
+  deck:{label:'Deck',sw:'var(--timber)',w:4,d:3,h:0,level:0.5,props:{material:'thermo',boardDir:'x',joist:400}},
+  sauna:{label:'Sauna',sw:'var(--cedar)',w:2.4,d:2.2,h:2.4,props:{style:'cabin',heater:'wood',glass:true}},
+  steps:{label:'Steps',sw:'var(--timber-2)',w:1.2,d:1,h:0,props:{top:'auto',topManual:0.6,going:0.3}},
+  plunge:{label:'Cold plunge',sw:'var(--water)',w:1.1,d:1.1,h:1.0,props:{shape:'round',mount:'sunk',chiller:true,fill:'mains'}},
+  shower:{label:'Outdoor shower',sw:'var(--panel)',w:0.9,d:0.9,h:2.2,props:{}},
+  bench:{label:'Bench',sw:'var(--panel)',w:1.8,d:0.45,h:0.45,props:{}},
+  hut:{label:'Changing hut',sw:'var(--panel)',w:2,d:1.5,h:2.3,props:{}},
+  store:{label:'Log store',sw:'var(--panel)',w:1.2,d:0.7,h:1.6,props:{}},
+  paving:{label:'Path / paving',sw:'var(--line)',w:1.2,d:3,h:0.05,props:{}},
+};
+const PALETTE=[
+  ['deck',null,'Deck'],['sauna',{style:'cabin'},'Cabin sauna'],['sauna',{style:'barrel',w:2.4,d:2.0,h:2.0},'Barrel sauna'],
+  ['steps',null,'Steps'],['plunge',{shape:'round'},'Plunge (round tub)'],['plunge',{shape:'rect',w:1.7,d:0.9,h:0.9},'Plunge (rectangular)'],
+  ['shower',null,'Outdoor shower'],['bench',null,'Bench'],['hut',null,'Changing hut'],['store',null,'Log store'],['paving',null,'Path / paving'],
+];
+const SVC={mains:{label:'Mains water',dash:''},drain:{label:'Drain / overflow',dash:'6 4'},power:{label:'Power cable',dash:'2 4'}};
+const RULES={
+  private:{label:'Private use (Part K, dwellings)',rMin:.15,rMax:.22,gMin:.22,gMax:.30,guard:.60,hrBoth:false},
+  commercial:{label:'Public / commercial (Parts K & M)',rMin:.15,rMax:.17,gMin:.28,gMax:.425,guard:.38,hrBoth:true},
+};
+const MAT={thermo:'Thermo-ash',larch:'Siberian larch',composite:'Capped composite',hardwood:'Hardwood (balau)'};
+const RATE_DEFS={
+  board_thermo:['Thermo-ash decking boards','m²',78], board_larch:['Siberian larch decking boards','m²',48],
+  board_composite:['Capped composite boards','m²',88], board_hardwood:['Hardwood (balau) boards','m²',96],
+  joist:['C24 UC4 joists 47×150','lm',5.6], bearer:['Double 47×150 bearers','lm',11.5],
+  post:['Ground screws / adjustable posts','ea',48], fixings:['A4 stainless deck screws','ea',0.28],
+  balustrade:['Balustrade 1.1 m, A4 fixings','lm',145], stringer:['Step stringers','ea',35], tread:['Step treads','m',42], handrail:['Handrail','lm',58],
+  sauna_cabin:['Cabin sauna kit (by footprint)','m²',1750], sauna_barrel:['Barrel sauna kit (by footprint)','m²',1450],
+  heater_wood:['Wood-fired heater, flue, spark arrestor','ea',1650], heater_elec:['Electric heater + controller','ea',1500],
+  plunge_round:['Insulated round plunge tub','ea',1900], plunge_rect:['Insulated rectangular plunge','ea',3400],
+  chiller:['Chiller + filter / UV / ozone','ea',2600], shower:['Outdoor thermostatic shower','ea',650],
+  hut:['Changing hut (by footprint)','m²',1200], bench:['Bench','ea',320], store:['Log store','ea',450], paving:['Path / paving','m²',70],
+  mains_conn:['Yorkshire Water new connection (budget)','ea',2200], mdpe:['25 mm blue MDPE + fittings','m',4],
+  trench:['Trench at 750 mm cover, backfill','m',38], backflow:['Type AA/AB air-gap break cistern','ea',420],
+  stopcock:['Meter chamber + stopcock','ea',180], frost:['Lagging / trace heat to exposed pipe','m',18],
+  drain_pipe:['110 mm drain pipe','m',14], soakaway:['Soakaway / dechlorination point','ea',850],
+  swa:['SWA armoured cable','m',15], elec_conn:['Electrician: supply, RCD, test','ea',750],
+};
+
+/* ---------- state ---------- */
+let S, selId=null, mode='select', drawPts=null, measure=null, tab='inspect', view={cx:0,cy:1,s:40};
+const undoStack=[], redoStack=[];
+function defaultRates(){const r={};for(const k in RATE_DEFS)r[k]=RATE_DEFS[k][2];r.contingency=15;return r}
+function mk(type,over={},propsOver={}){const t=TYPES[type];return Object.assign({id:uid(),type,name:t.label,x:0,y:0,w:t.w,d:t.d,h:t.h,rot:0,level:t.level??0,props:Object.assign(clone(t.props),propsOver)},over)}
+function example(){
+  return {
+    v:1, example:true,
+    site:{lat:54.1290,lon:-0.1010,north:0,slope:8,fall:20,sea:20,use:'commercial',date:'2026-12-21',time:'15:00',cover:750,flow:12,sessions:24,refresh:14,days:300,showerL:30,waterRate:4.2},
+    items:[
+      mk('deck',{name:'Main deck',x:0,y:0,w:7,d:4.5,level:0.5},{material:'thermo'}),
+      mk('sauna',{name:'Sauna',x:-1.8,y:-0.2,w:2.6,d:2.2,h:2.4},{style:'cabin',heater:'wood'}),
+      mk('plunge',{name:'Cold plunge',x:2.3,y:-1.0,w:1.15,d:1.15,h:1.0},{shape:'round',mount:'sunk'}),
+      mk('shower',{name:'Shower',x:2.85,y:1.55,w:0.9,d:0.9}),
+      mk('bench',{name:'Bench',x:-1.8,y:1.75,w:2.2,d:0.45}),
+      mk('steps',{name:'Steps from car park path',x:0.9,y:2.75,w:1.2,d:1}),
+      mk('paving',{name:'Path',x:0.9,y:5.6,w:1.2,d:4}),
+      mk('store',{name:'Log store',x:-4.3,y:-0.2,w:0.8,d:2,h:1.6}),
+    ],
+    services:[
+      {id:uid(),kind:'mains',pts:[[-6,11],[-6,4.2],[2.85,4.2],[2.85,1.55],[2.3,-1.0]]},
+      {id:uid(),kind:'drain',pts:[[2.3,-1.0],[4.6,-3.2],[6.5,-4.2]]},
+    ],
+    rates:defaultRates(), checks:{}, ui:{snap:true}, bg:null
+  };
+}
+
+/* ---------- geometry ---------- */
+const isRound=it=>it.type==='plunge'&&it.props.shape==='round';
+function frame(it){const a=it.rot*D2R;return{c:Math.cos(a),s:Math.sin(a)}}
+function toWorld(it,lx,ly){const{c,s}=frame(it);return[it.x+lx*c-ly*s,it.y+lx*s+ly*c]}
+function toLocal(it,px,py){const{c,s}=frame(it);const dx=px-it.x,dy=py-it.y;return[dx*c+dy*s,-dx*s+dy*c]}
+function inside(it,px,py,pad=0){if(isRound(it))return Math.hypot(px-it.x,py-it.y)<=it.w/2+pad;const[lx,ly]=toLocal(it,px,py);return Math.abs(lx)<=it.w/2+pad&&Math.abs(ly)<=it.d/2+pad}
+function corners(it){return[[-1,-1],[1,-1],[1,1],[-1,1]].map(([a,b])=>toWorld(it,a*it.w/2,b*it.d/2))}
+function planDir(bearing){const t=(S.site.north+bearing)*D2R;return[Math.sin(t),-Math.cos(t)]}
+function groundAt(x,y){const f=planDir(S.site.fall);return-(S.site.slope/100)*(x*f[0]+y*f[1])}
+function deckAt(x,y,excl){let best=null;for(const it of S.items)if(it.type==='deck'&&it.id!==excl&&inside(it,x,y))best=best==null?it.level:Math.max(best,it.level);return best}
+function baseAt(x,y,excl){const d=deckAt(x,y,excl);return d==null?groundAt(x,y):d}
+const rules=()=>RULES[S.site.use]||RULES.commercial;
+function plungeLevels(it){const dk=deckAt(it.x,it.y);if(it.props.mount==='sunk'){const rim=dk??groundAt(it.x,it.y);return{rim,bottom:rim-it.h,base:rim-it.h}}const base=dk??groundAt(it.x,it.y);return{rim:base+it.h,bottom:base,base}}
+function itemBase(it){if(it.type==='deck')return it.level;if(it.type==='plunge')return plungeLevels(it).base;return baseAt(it.x,it.y)}
+
+function solveSteps(it){
+  const r=rules();let c={};
+  for(let k=0;k<5;k++){
+    const T=toWorld(it,0,-it.d/2);
+    let dk=null;for(const off of[0.06,0.15,0.3]){const pr=toWorld(it,0,-it.d/2-off);dk=deckAt(pr[0],pr[1]);if(dk!=null)break}
+    const auto=it.props.top==='auto'&&dk!=null;
+    const top=auto?dk:+it.props.topManual;
+    const foot=toWorld(it,0,it.d/2), g=groundAt(foot[0],foot[1]);
+    const rise=Math.max(0,top-g);
+    const n=Math.max(1,Math.ceil(rise/r.rMax-1e-6));
+    const riser=rise/n, going=+it.props.going;
+    const run=Math.max((n-1)*going,0.3);
+    const{c:co,s:si}=frame(it);
+    it.d=run;it.x=T[0]-(run/2)*si;it.y=T[1]+(run/2)*co;
+    c={top,g,rise,n,riser,going,run,auto,treads:n-1};
+  }
+  c.sum=2*c.riser+c.going;
+  c.okR=c.riser>=r.rMin-1e-3&&c.riser<=r.rMax+1e-3; c.okG=c.going>=r.gMin-1e-3&&c.going<=r.gMax+1e-3; c.okS=c.sum>=.55-1e-3&&c.sum<=.70+1e-3;
+  c.handrails=c.rise<=0.6&&!r.hrBoth?0:(r.hrBoth&&c.n>=2)||it.w>1.0?2:1;
+  if(c.rise<0.05)c.handrails=0;
+  c.stringerLen=Math.hypot(c.run,c.rise)+0.15;
+  it._c=c;return c;
+}
+function resolve(){for(const it of S.items)if(it.type==='steps')solveSteps(it)}
+
+const EDGES=[{a:[-1,-1],b:[1,-1],n:[0,-1]},{a:[1,-1],b:[1,1],n:[1,0]},{a:[1,1],b:[-1,1],n:[0,1]},{a:[-1,1],b:[-1,-1],n:[-1,0]}];
+function guardSegments(dk){
+  const thr=rules().guard,segs=[];
+  for(const E of EDGES){
+    const ax=E.a[0]*dk.w/2,ay=E.a[1]*dk.d/2,bx=E.b[0]*dk.w/2,by=E.b[1]*dk.d/2;
+    const len=Math.hypot(bx-ax,by-ay),N=Math.max(2,Math.round(len/0.15));
+    let run=null;
+    const flush=()=>{if(run&&run.t1-run.t0>0.04){const A=toWorld(dk,ax+(bx-ax)*run.t0,ay+(by-ay)*run.t0),B=toWorld(dk,ax+(bx-ax)*run.t1,ay+(by-ay)*run.t1);segs.push({a:A,b:B,len:len*(run.t1-run.t0),drop:run.drop})}run=null};
+    for(let i=0;i<N;i++){
+      const t=(i+.5)/N,lx=ax+(bx-ax)*t,ly=ay+(by-ay)*t;
+      const W=toWorld(dk,lx+E.n[0]*.08,ly+E.n[1]*.08),Q=toWorld(dk,lx-E.n[0]*.1,ly-E.n[1]*.1);
+      let need=false,drop=0;
+      const wall=S.items.some(o=>(o.type==='sauna'||o.type==='hut'||o.type==='store')&&(inside(o,Q[0],Q[1])||inside(o,W[0],W[1])));
+      const opening=S.items.some(o=>o.type==='steps'&&inside(o,W[0],W[1],0.02));
+      if(!wall&&!opening){drop=dk.level-baseAt(W[0],W[1],dk.id);need=drop>thr}
+      if(need){if(!run)run={t0:i/N,t1:(i+1)/N,drop};else{run.t1=(i+1)/N;run.drop=Math.max(run.drop,drop)}}else flush();
+    }
+    flush();
+  }
+  return segs;
+}
+function deckCalc(dk){
+  const along=dk.props.boardDir==='x'?dk.w:dk.d, across=dk.props.boardDir==='x'?dk.d:dk.w;
+  const area=dk.w*dk.d, rows=Math.ceil(across/0.15), boardLm=rows*along*1.1;
+  const js=(+dk.props.joist||400)/1000, joists=Math.ceil(along/js)+1, joistLm=joists*across;
+  const bearers=Math.ceil(across/1.8)+1, bearerLm=bearers*along, posts=bearers*(Math.ceil(along/1.8)+1);
+  const hs=corners(dk).map(([x,y])=>dk.level-groundAt(x,y));
+  const guards=guardSegments(dk), guardLm=guards.reduce((a,g)=>a+g.len,0);
+  return{area,rows,boardLm,joists,joistLm,bearers,bearerLm,posts,screws:rows*joists*2,hMin:Math.min(...hs),hMax:Math.max(...hs),guards,guardLm};
+}
+function saunaCalc(it){
+  let vol,floor;
+  if(it.props.style==='barrel'){const r=it.d/2-0.05,L=it.w-0.1;vol=Math.PI*r*r*L*0.9;floor=L*(it.d-0.5)}
+  else{const t=0.12;floor=(it.w-2*t)*(it.d-2*t);vol=floor*Math.max(1.8,it.h-0.35)}
+  const seats=Math.max(2,Math.floor(floor/0.7));
+  const kw=Math.ceil(vol*1.0+(it.props.glass?1.5:0));
+  return{vol,floor,seats,kw};
+}
+function plungeCalc(it){const v=isRound(it)?Math.PI*(it.w/2-0.05)**2*it.h:(it.w-0.1)*(it.d-0.1)*it.h;return{vol:v*1000,fill:v*1000*0.9}}
+function svcLen(s){let L=0;for(let i=1;i<s.pts.length;i++)L+=Math.hypot(s.pts[i][0]-s.pts[i-1][0],s.pts[i][1]-s.pts[i-1][1]);return L}
+
+/* ---------- sun ---------- */
+function isBST(y,m,d,h){const lastSun=mm=>{const dt=new Date(Date.UTC(y,mm+1,0));return dt.getUTCDate()-dt.getUTCDay()};if(m<2||m>9)return false;if(m>2&&m<9)return true;if(m===2)return d>lastSun(2)||(d===lastSun(2)&&h>=1);return d<lastSun(9)||(d===lastSun(9)&&h<1)}
+function localToUTC(dateStr,timeStr){const[y,m,d]=dateStr.split('-').map(Number);const[h,mi]=(timeStr||'12:00').split(':').map(Number);const off=isBST(y,m-1,d,h)?1:0;return new Date(Date.UTC(y,m-1,d,h-off,mi))}
+function sunPos(date,lat,lon){
+  const rad=D2R,jd=date.getTime()/86400000+2440587.5,T=(jd-2451545)/36525;
+  const L0=((280.46646+T*(36000.76983+T*0.0003032))%360+360)%360,M=357.52911+T*(35999.05029-0.0001537*T),e=0.016708634-T*(0.000042037+0.0000001267*T);
+  const C=Math.sin(M*rad)*(1.914602-T*(0.004817+0.000014*T))+Math.sin(2*M*rad)*(0.019993-0.000101*T)+Math.sin(3*M*rad)*0.000289;
+  const om=125.04-1934.136*T,lam=L0+C-0.00569-0.00478*Math.sin(om*rad);
+  const eps0=23+(26+(21.448-T*(46.815+T*(0.00059-T*0.001813)))/60)/60,eps=eps0+0.00256*Math.cos(om*rad);
+  const dec=Math.asin(Math.sin(eps*rad)*Math.sin(lam*rad)),y=Math.tan(eps*rad/2)**2;
+  const eqt=4*R2D*(y*Math.sin(2*L0*rad)-2*e*Math.sin(M*rad)+4*e*y*Math.sin(M*rad)*Math.cos(2*L0*rad)-0.5*y*y*Math.sin(4*L0*rad)-1.25*e*e*Math.sin(2*M*rad));
+  const mins=date.getUTCHours()*60+date.getUTCMinutes()+date.getUTCSeconds()/60;
+  let ha=(mins+eqt+4*lon)/4-180;if(ha<-180)ha+=360;
+  const la=lat*rad,cz=Math.sin(la)*Math.sin(dec)+Math.cos(la)*Math.cos(dec)*Math.cos(ha*rad);
+  const alt=90-Math.acos(Math.max(-1,Math.min(1,cz)))*R2D;
+  const az=(Math.atan2(Math.sin(ha*rad),Math.cos(ha*rad)*Math.sin(la)-Math.tan(dec)*Math.cos(la))*R2D+180+360)%360;
+  return{alt,az};
+}
+function sunDay(){
+  const s=S.site,pts=[];let rise=null,set=null,prev=null;
+  for(let m=0;m<=1440;m+=10){const hh=String(Math.floor(m/60)%24).padStart(2,'0'),mm=String(m%60).padStart(2,'0');const p=sunPos(localToUTC(s.date,hh+':'+mm),s.lat,s.lon);p.m=m;pts.push(p);
+    if(prev){if(prev.alt<-0.83&&p.alt>=-0.83)rise=m;if(prev.alt>=-0.83&&p.alt<-0.83)set=m}prev=p}
+  return{pts,rise,set,now:sunPos(localToUTC(s.date,s.time),s.lat,s.lon)};
+}
+const hm=m=>m==null?'—':String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0');
+
+/* ---------- persistence / history ---------- */
+const KEY='nl-sauna-v1',BGKEY='nl-sauna-bg';
+function save(){try{const o=clone(S);o.bg=S.bg?Object.assign({},S.bg,{src:null}):null;localStorage.setItem(KEY,JSON.stringify(o));if(S.bg)localStorage.setItem(BGKEY,S.bg.src);else localStorage.removeItem(BGKEY)}catch(e){}}
+function load(){try{const t=localStorage.getItem(KEY);if(!t)return null;const o=JSON.parse(t);if(o.bg){const src=localStorage.getItem(BGKEY);if(src)o.bg.src=src;else o.bg=null}return normalise(o)}catch(e){return null}}
+function normalise(o){const ex=example();o.site=Object.assign({},ex.site,o.site||{});o.rates=Object.assign(defaultRates(),o.rates||{});o.items=(o.items||[]).map(it=>Object.assign(mk(it.type in TYPES?it.type:'paving'),it,{props:Object.assign(clone(TYPES[it.type]?.props||{}),it.props||{})}));o.services=o.services||[];o.checks=o.checks||{};o.ui=Object.assign({snap:true},o.ui||{});return o}
+function commit(){const snap=JSON.stringify(Object.assign({},S,{bg:S.bg?Object.assign({},S.bg,{src:'#'}):null}));if(undoStack.at(-1)!==snap){undoStack.push(snap);if(undoStack.length>120)undoStack.shift();redoStack.length=0}save();renderAll()}
+function restore(snap){const bg=S.bg;S=JSON.parse(snap);if(S.bg)S.bg.src=bg?bg.src:null;if(S.bg&&!S.bg.src)S.bg=null;if(selId&&!S.items.find(i=>i.id===selId)&&!S.services.find(s=>s.id===selId))selId=null;save();renderAll()}
+function undo(){if(undoStack.length<2)return;redoStack.push(undoStack.pop());restore(undoStack.at(-1))}
+function redo(){if(!redoStack.length)return;const s=redoStack.pop();undoStack.push(s);restore(s)}
+
+/* ---------- calculations: BOM & checks ---------- */
+function bom(){
+  const rows=[],R=S.rates,add=(g,key,qty,note)=>{if(qty>0)rows.push({g,key,qty,note})};
+  const decks=S.items.filter(i=>i.type==='deck');
+  for(const dk of decks){const c=deckCalc(dk),g='Decking — '+dk.name;
+    add(g,'board_'+dk.props.material,c.area*1.1,`${fx(c.area,1)} m² + 10% waste ≈ ${Math.ceil(c.boardLm)} lm of 145 mm board`);
+    add(g,'joist',c.joistLm,`${c.joists} joists @ ${dk.props.joist} mm c/c`);
+    add(g,'bearer',c.bearerLm,`${c.bearers} lines, ≤1.8 m spans`);
+    add(g,'post',c.posts,`deck ${fx(c.hMin)}–${fx(c.hMax)} m above ground`);
+    add(g,'fixings',c.screws,'2 per board per joist');
+    add(g,'balustrade',c.guardLm,'edges with a drop over '+(rules().guard*1000)+' mm');
+  }
+  for(const st of S.items.filter(i=>i.type==='steps')){const c=st._c||solveSteps(st),g='Steps — '+st.name;if(c.rise<0.05)continue;
+    add(g,'stringer',st.w>0.9?3:2,`${fx(c.stringerLen)} m long each`);add(g,'tread',c.treads*st.w,`${c.treads} treads × ${fx(st.w)} m`);add(g,'handrail',c.handrails*c.stringerLen,c.handrails+' side(s)')}
+  for(const it of S.items){const g=TYPES[it.type].label+' — '+it.name;
+    if(it.type==='sauna'){add(g,'sauna_'+it.props.style,it.w*it.d,`${fx(it.w,1)} × ${fx(it.d,1)} m footprint`);add(g,it.props.heater==='wood'?'heater_wood':'heater_elec',1,`≈${saunaCalc(it).kw} kW for ${fx(saunaCalc(it).vol,1)} m³`)}
+    if(it.type==='plunge'){add(g,'plunge_'+it.props.shape,1,`${Math.round(plungeCalc(it).vol)} L`);if(it.props.chiller)add(g,'chiller',1,'')}
+    if(it.type==='shower')add(g,'shower',1,'');
+    if(it.type==='hut')add(g,'hut',it.w*it.d,'');
+    if(it.type==='bench')add(g,'bench',1,'');
+    if(it.type==='store')add(g,'store',1,'');
+    if(it.type==='paving')add(g,'paving',it.w*it.d,'');
+  }
+  const L=k=>S.services.filter(s=>s.kind===k).reduce((a,s)=>a+svcLen(s),0);
+  const lm=L('mains'),ld=L('drain'),lp=L('power');
+  if(lm>0){const g='Mains water';add(g,'mains_conn',1,'confirm with Yorkshire Water');add(g,'stopcock',1,'');add(g,'mdpe',lm*1.05,`${fx(lm,1)} m run + 5%`);add(g,'trench',lm,'');
+    const outlets=S.items.filter(i=>(i.type==='plunge'&&i.props.fill==='mains')||i.type==='shower').length;add(g,'frost',outlets*2.5,`${outlets} outlet(s) × 2.5 m above ground`);
+    if(S.items.some(i=>i.type==='plunge'&&i.props.fill==='mains'))add(g,'backflow',1,'fluid category 5 protection')}
+  if(ld>0){const g='Drainage';add(g,'drain_pipe',ld,`${fx(ld,1)} m`);add(g,'trench',ld,'');add(g,'soakaway',1,'')}
+  if(lp>0){const g='Power';add(g,'swa',lp*1.1,`${fx(lp,1)} m + 10%`);add(g,'trench',lp,'separate from water');add(g,'elec_conn',1,'')}
+  for(const r of rows){r.rate=+R[r.key];r.total=r.qty*r.rate}
+  const sub=rows.reduce((a,r)=>a+r.total,0);
+  return{rows,sub,cont:sub*(+R.contingency||0)/100,total:sub*(1+(+R.contingency||0)/100)};
+}
+function checks(){
+  const out=[],r=rules(),push=(id,level,title,body)=>out.push({id,level,title,body});
+  for(const dk of S.items.filter(i=>i.type==='deck')){const c=deckCalc(dk);
+    if(c.guardLm>0)push('g-'+dk.id,'warn',`${dk.name}: guarding needed on ${fx(c.guardLm,1)} m of edge`,`The deck sits up to ${fx(c.hMax)} m above ground. Edges with a drop over ${r.guard*1000} mm need a 1100 mm guard that a child can't climb or pass a 100 mm sphere through. Shown in orange on the plan.`);
+    else push('g-'+dk.id,'ok',`${dk.name}: no guarding needed`,`Highest edge is ${fx(c.hMax)} m above ground, under the ${r.guard*1000} mm threshold for ${r.label.toLowerCase()}.`);
+    if(c.hMax>0.3)push('pd-'+dk.id,'info',`${dk.name}: over 300 mm high`,'Decking more than 300 mm above ground is outside householder permitted development. At North Landing assume full planning permission is needed anyway (see planning note).');
+  }
+  for(const st of S.items.filter(i=>i.type==='steps')){const c=st._c||solveSteps(st);
+    if(c.rise<0.05){push('s-'+st.id,'info',`${st.name}: no rise`,'These steps meet ground level. Move them so the top edge touches a deck.');continue}
+    const bad=!(c.okR&&c.okG&&c.okS);
+    push('s-'+st.id,bad?'bad':'ok',`${st.name}: ${c.n} risers of ${Math.round(c.riser*1000)} mm, ${Math.round(c.going*1000)} mm going`,
+      `Rise ${Math.round(c.rise*1000)} mm (deck at ${fx(c.top)} m, ground at ${fx(c.g)} m). Limits for ${r.label.toLowerCase()}: riser ${r.rMin*1000}–${r.rMax*1000} mm, going ${r.gMin*1000}–${r.gMax*1000} mm, 2R+G 550–700 mm (now ${Math.round(c.sum*1000)} mm). Handrails: ${c.handrails||'none'}${c.handrails?' side(s), 900–1000 mm above the pitch line':''}.`+(c.okR?'':' Riser out of range.')+(c.okG?'':' Going out of range — change it in Selected.')+(c.okS?'':' 2R+G out of range.'));
+  }
+  const plunges=S.items.filter(i=>i.type==='plunge');
+  if(plunges.some(p=>p.props.fill==='mains'))push('wf','warn','Plunge on mains: backflow protection','Under the Water Supply (Water Fittings) Regulations 1999 a plunge pool is high-risk (fluid category 5). Fill it through a type AA/AB air gap or a break cistern, never a hose left in the water. You must notify Yorkshire Water before installing the fittings.');
+  if(S.services.some(s=>s.kind==='mains')){
+    push('conn','info','New mains connection','Apply to Yorkshire Water for a new supply (and a meter). Lead times run to weeks; budget figure is in Costs. The landowner must consent to the route.');
+    push('cover',+S.site.cover>=750?'ok':'bad',`Pipe cover: ${S.site.cover} mm`,+S.site.cover>=750?'Meets the usual 750 mm minimum cover for frost protection.':'Bury supply pipe with at least 750 mm cover (max 1350 mm). Lag and trace-heat any pipe that rises above ground, or fit a drain-down valve for winter.');
+  }
+  if(plunges.length)push('drain','warn','Plunge water disposal','Treated or chlorinated water must not go to the beach, a watercourse or a surface-water drain without Environment Agency agreement. Flamborough sits on the chalk aquifer: check groundwater protection before a soakaway, or tanker / foul-drain it. Dechlorinate before discharge.');
+  for(const s of S.items.filter(i=>i.type==='sauna')){const c=saunaCalc(s);
+    if(s.props.heater==='wood')push('fire-'+s.id,'warn',`${s.name}: wood-fired stove on a timber deck`,'Stand the stove on a non-combustible hearth, keep manufacturer clearances, fit a spark arrestor and use a twin-wall insulated flue through the roof. Onshore winds will push smoke across the deck, so site the flue downwind of the seating where you can.');
+    else if(c.kw>9)push('ph-'+s.id,'warn',`${s.name}: ${c.kw} kW heater`,'Heaters over about 9 kW usually need a three-phase supply. Check what is available at the car park or kiosk before choosing electric.');
+    else push('ph-'+s.id,'info',`${s.name}: ${c.kw} kW electric heater`,'A dedicated radial circuit with RCD protection, installed and certified under Part P / BS 7671.');
+  }
+  push('wind','warn','Exposed clifftop: wind and salt','North Landing faces the North Sea. Winter northerly and north-easterly gales are onshore here. Anchor the sauna and plunge against uplift (ground screws or strapping to the substructure), use A4 (316) stainless fixings throughout, and choose thermally modified or naturally durable timber.');
+  push('plan','bad','Planning and protected-site consents','The site is inside the Flamborough Headland Heritage Coast and next to the Flamborough Head SSSI, the Flamborough Head SAC and the Flamborough & Filey Coast SPA (seabirds). Expect a full application to East Riding of Yorkshire Council, consultation with Natural England, and landowner consent. Anything below mean high water springs also needs a marine licence from the MMO.');
+  if(S.site.use==='commercial')push('m','info','Public use: access and safety','For paying customers: wet-slip resistant decking (grooved or with anti-slip inserts near the plunge), a risk assessment for cold-water immersion, clear depth signage on the plunge, and an accessible route where reasonably practicable (Part M).');
+  return out;
+}
+
+/* ---------- panel rendering ---------- */
+function bid(b){return 'f-'+b.replace(/[^a-z0-9]/gi,'-')}
+function fNum(b,label,val,step=0.05,unit='m',min=''){return`<label class="fld"><span>${label}</span><span class="inp"><input id="${bid(b)}" type="number" inputmode="decimal" step="${step}" ${min!==''?`min="${min}"`:''} value="${+(+val).toFixed(3)}" data-bind="${b}"><em>${unit}</em></span></label>`}
+function fTxt(b,label,val,type='text'){return`<label class="fld"><span>${label}</span><span class="inp"><input id="${bid(b)}" type="${type}" value="${esc(val)}" data-bind="${b}" data-t="text"></span></label>`}
+function fSel(b,label,val,opts){return`<label class="fld"><span>${label}</span><span class="inp"><select id="${bid(b)}" data-bind="${b}" data-t="text">${Object.entries(opts).map(([k,v])=>`<option value="${k}"${k==val?' selected':''}>${v}</option>`).join('')}</select></span></label>`}
+function fChk(b,label,val){return`<label class="fld"><span>${label}</span><span class="inp"><input id="${bid(b)}" type="checkbox" data-bind="${b}" data-t="chk"${val?' checked':''}></span></label>`}
+const rd=pairs=>`<div class="read">${pairs.map(([k,v])=>`<div><span>${k}</span><b>${v}</b></div>`).join('')}</div>`;
+
+function selItem(){return S.items.find(i=>i.id===selId)}
+function selSvc(){return S.services.find(s=>s.id===selId)}
+
+function paneInspect(){
+  const it=selItem(),sv=selSvc();
+  if(sv){const L=svcLen(sv);return`<section><h3>${SVC[sv.kind].label}</h3>${fSel('v:kind','Type',sv.kind,{mains:'Mains water',drain:'Drain / overflow',power:'Power cable'})}
+    ${rd([['Run length',fx(L,1)+' m'],['Points',sv.pts.length],['Trench at '+S.site.cover+' mm',fx(L,1)+' m']])}
+    <p class="note">Drag the white dots to reshape the run.</p>
+    <div class="row"><button class="btn danger" data-act="del">Delete run</button></div></section>`}
+  if(!it){return`<section><h3>Nothing selected</h3><div class="empty">Click something on the plan to edit it, or add a deck, sauna, steps or plunge from the left. Drag to move, drag the corner dots to resize, and drag the round handle to rotate. Drag empty space to pan; scroll or pinch to zoom.</div></section>
+    <section><h3>Keyboard</h3>${rd([['Delete selected','Del'],['Duplicate','Ctrl D'],['Nudge 50 mm / 500 mm','Arrows / Shift'],['Rotate 15°','R'],['Undo / redo','Ctrl Z / Ctrl ⇧ Z'],['Finish a pipe run','Enter or double-click']])}</section>`}
+  const t=it.type;let h=`<section><h3>${TYPES[t].label}</h3>${fTxt('i:name','Name',it.name)}<div class="grid2" style="grid-template-columns:1fr">`;
+  h+=fNum('i:x','Centre x',it.x,0.05)+fNum('i:y','Centre y',it.y,0.05);
+  if(t==='steps')h+=fNum('i:w','Width',it.w,0.05,'m',0.6);
+  else if(isRound(it))h+=fNum('i:w','Diameter',it.w,0.05,'m',0.5);
+  else h+=fNum('i:w',t==='sauna'&&it.props.style==='barrel'?'Length':'Width',it.w,0.05,'m',0.2)+fNum('i:d',t==='sauna'&&it.props.style==='barrel'?'Diameter':'Depth',it.d,0.05,'m',0.2);
+  h+=fNum('i:rot','Rotation',it.rot,5,'°');
+  if(t==='deck')h+=fNum('i:level','Deck top level',it.level,0.025,'m')+fSel('i:props.material','Boards',it.props.material,MAT)+fSel('i:props.boardDir','Boards run',it.props.boardDir,{x:'Along width',y:'Along depth'})+fSel('i:props.joist','Joist spacing',String(it.props.joist),{'300':'300 mm (composite)','400':'400 mm','450':'450 mm'});
+  if(t==='sauna')h+=fSel('i:props.style','Form',it.props.style,{cabin:'Cabin',barrel:'Barrel'})+fSel('i:props.heater','Heater',it.props.heater,{wood:'Wood-fired',electric:'Electric'})+fChk('i:props.glass','Glazed front',it.props.glass)+fNum('i:h','Overall height',it.h,0.05);
+  if(t==='steps')h+=fSel('i:props.top','Top level',it.props.top,{auto:'Match deck it meets',manual:'Set manually'})+(it.props.top==='manual'||!it._c?.auto?fNum('i:props.topManual','Manual top level',it.props.topManual,0.025):'')+fNum('i:props.going','Going (tread depth)',it.props.going,0.01);
+  if(t==='plunge')h+=fSel('i:props.shape','Shape',it.props.shape,{round:'Round tub',rect:'Rectangular'})+fSel('i:props.mount','Install',it.props.mount,{sunk:'Sunk into deck',freestanding:'Free-standing'})+fNum('i:h','Water depth',it.h,0.05)+fSel('i:props.fill','Filled from',it.props.fill,{mains:'Mains',manual:'Hose / bowser'})+fChk('i:props.chiller','Chiller & filtration',it.props.chiller);
+  if(['shower','bench','hut','store','paving'].includes(t))h+=fNum('i:h','Height',it.h,0.05);
+  h+=`</div></section><section><h3>Figures</h3><div id="readout">${readout(it)}</div></section>
+  <div class="row"><button class="btn" data-act="dup">Duplicate</button><button class="btn danger" data-act="del">Delete</button></div>`;
+  return h;
+}
+function readout(it){
+  const t=it.type;
+  if(t==='deck'){const c=deckCalc(it);return rd([['Area',fx(c.area,1)+' m²'],['Height above ground',fx(c.hMin)+' – '+fx(c.hMax)+' m'],['Boards (145 mm)',Math.ceil(c.boardLm)+' lm'],['Joists',c.joists+' × '+fx(it.props.boardDir==='x'?it.d:it.w,1)+' m'],['Bearers',c.bearers+' × '+fx(it.props.boardDir==='x'?it.w:it.d,1)+' m'],['Ground screws / posts',c.posts],['Guarded edge',fx(c.guardLm,1)+' m']])}
+  if(t==='steps'){const c=it._c||solveSteps(it),r=rules(),ch=(ok,v)=>`<span class="chip ${ok?'ok':'bad'}">${v}</span>`;
+    if(c.rise<0.05)return'<div class="empty">No rise here. Move the steps so the top edge (arrow end) touches a deck edge.</div>';
+    return rd([['Total rise',Math.round(c.rise*1000)+' mm'],['Risers',c.n+' × '+ch(c.okR,Math.round(c.riser*1000)+' mm')],['Going',ch(c.okG,Math.round(c.going*1000)+' mm')],['2R + G',ch(c.okS,Math.round(c.sum*1000)+' mm')],['Treads',c.treads],['Run (plan length)',fx(c.run)+' m'],['Stringer length',fx(c.stringerLen)+' m'],['Handrails',c.handrails?c.handrails+' side(s)':'none'],['Top level from',c.auto?'deck':'manual']])+`<p class="note">${r.label}. Steps resize themselves to the rise; keep the arrow end against the deck.</p>`}
+  if(t==='sauna'){const c=saunaCalc(it);return rd([['Internal volume','≈ '+fx(c.vol,1)+' m³'],['Bench seats','≈ '+c.seats],['Heater size','≈ '+c.kw+' kW'],['Standing on',fx(itemBase(it))+' m level']])}
+  if(t==='plunge'){const c=plungeCalc(it),p=plungeLevels(it),ft=c.fill/(+S.site.flow||12);return rd([['Volume',Math.round(c.vol)+' L'],['Working fill (90%)',Math.round(c.fill)+' L'],['Fill time at '+S.site.flow+' L/min',Math.round(ft)+' min'],['Rim level',fx(p.rim)+' m'],['Rim above ground',fx(p.rim-groundAt(it.x,it.y))+' m'],['Dig / void below',p.bottom<groundAt(it.x,it.y)?fx(groundAt(it.x,it.y)-p.bottom)+' m':'none']])+(it.props.mount==='freestanding'&&p.rim-baseAt(it.x,it.y)>0.6?'<p class="note">Rim is over 600 mm above where people stand: add a step or platform to climb in.</p>':'')}
+  return rd([['Footprint',fx(it.w*it.d,2)+' m²'],['Standing on',fx(itemBase(it))+' m level']]);
+}
+function paneSite(){
+  const s=S.site,sd=sunDay(),r=rules();
+  return`<section><h3>Location</h3>${fNum('s:lat','Latitude',s.lat,0.0001,'°N')}${fNum('s:lon','Longitude',s.lon,0.0001,'°E')}
+  <p class="note">North Landing cove, Flamborough Head. Check the exact spot: <a href="https://www.google.com/maps/@${s.lat},${s.lon},120m/data=!3m1!1e3" target="_blank" rel="noopener">aerial view</a> · <a href="https://explore.osmaps.com/?lat=${s.lat}&lon=${s.lon}&zoom=17" target="_blank" rel="noopener">OS map</a></p></section>
+  <section><h3>Orientation & ground</h3>${fNum('s:north','Plan north points',s.north,5,'° cw')}${fNum('s:sea','Sea lies toward',s.sea,5,'° brg')}${fNum('s:slope','Ground slope',s.slope,0.5,'%')}${fNum('s:fall','Ground falls toward',s.fall,5,'° brg')}
+  <p class="note">Ground level 0.00 is at the plan origin. Blue contours every 100 mm show the fall; deck and step heights are measured from it.</p></section>
+  <section><h3>Use</h3>${fSel('s:use','Who will use it',s.use,{commercial:RULES.commercial.label,private:RULES.private.label})}
+  ${rd([['Max riser',r.rMax*1000+' mm'],['Going',r.gMin*1000+'–'+r.gMax*1000+' mm'],['Guard edges over',r.guard*1000+' mm drop']])}</section>
+  <section><h3>Sun</h3>${fTxt('s:date','Date',s.date,'date')}${fTxt('s:time','Time (UK clock)',s.time,'time')}
+  ${rd([['Sunrise / sunset',hm(sd.rise)+' / '+hm(sd.set)],['Sun bearing',Math.round(sd.now.az)+'°'],['Sun altitude',fx(sd.now.alt,1)+'°'+(sd.now.alt<=0?' (below horizon)':'')]])}
+  <div class="row"><button class="btn" data-sun="2026-06-21">Midsummer</button><button class="btn" data-sun="2026-03-20">Equinox</button><button class="btn" data-sun="2026-12-21">Midwinter</button></div>
+  <p class="note">The 3D view casts shadows for this date and time. The compass shows the day's sun path.</p></section>`;
+}
+function paneWater(){
+  const s=S.site,pl=S.items.filter(i=>i.type==='plunge'),sh=S.items.filter(i=>i.type==='shower');
+  const L=k=>S.services.filter(v=>v.kind===k).reduce((a,v)=>a+svcLen(v),0);
+  const plungeL=pl.reduce((a,p)=>a+plungeCalc(p).fill,0),fills=365/(+s.refresh||14);
+  const annPl=plungeL*fills*(+s.days/365)/1000,annSh=sh.length?(+s.sessions*+s.showerL*+s.days)/1000:0,ann=annPl+annSh;
+  return`<section><h3>Runs on the plan</h3>${S.services.length?rd(S.services.map(v=>[SVC[v.kind].label,fx(svcLen(v),1)+' m'])):'<div class="empty">No pipe or cable runs yet. Pick Mains water on the left, click from the connection point to the outlet, then press Enter.</div>'}
+  ${rd([['Mains total',fx(L('mains'),1)+' m'],['Drain total',fx(L('drain'),1)+' m'],['Power total',fx(L('power'),1)+' m']])}</section>
+  <section><h3>Supply</h3>${fNum('s:cover','Pipe cover depth',s.cover,50,'mm')}${fNum('s:flow','Flow at outlet',s.flow,1,'L/min')}</section>
+  <section><h3>Use</h3>${fNum('s:sessions','Bathers per day',s.sessions,1,'')}${fNum('s:days','Days open per year',s.days,5,'d')}${fNum('s:refresh','Plunge drained every',s.refresh,1,'days')}${fNum('s:showerL','Rinse per bather',s.showerL,5,'L')}${fNum('s:waterRate','Water + waste rate',s.waterRate,0.1,'£/m³')}
+  ${rd([['Plunge volume',Math.round(plungeL)+' L'],['Plunge refill time',pl.length?Math.round(plungeL/(+s.flow||12))+' min':'—'],['Plunge water / yr',fx(annPl,1)+' m³'],['Shower water / yr',fx(annSh,1)+' m³'],['Total / yr',fx(ann,1)+' m³'],['Water cost / yr','≈ '+gbp(ann*s.waterRate)]])}
+  <p class="note">Rates are a placeholder. Use the tariff in Yorkshire Water's current non-household charges.</p></section>`;
+}
+function paneCosts(){
+  const b=bom();let g='',h=`<section><h3>Budget estimate</h3><p class="note">Indicative 2026 UK supply prices, before labour unless stated. Edit any rate; it applies everywhere that rate is used.</p><div class="tblw"><table class="bom"><thead><tr><th>Item</th><th style="text-align:right">Qty</th><th style="text-align:right">Rate £</th><th style="text-align:right">Total</th></tr></thead><tbody>`;
+  for(const r of b.rows){if(r.g!==g){g=r.g;h+=`<tr class="g"><td colspan="4">${esc(g)}</td></tr>`}
+    const d=RATE_DEFS[r.key];h+=`<tr><td>${d[0]}${r.note?`<div class="note">${esc(r.note)}</div>`:''}</td><td class="n">${fx(r.qty,r.qty<10&&r.qty%1?1:0)} ${d[1]}</td><td class="n"><input id="${bid('r:'+r.key+'-'+r.g)}" type="number" step="any" value="${r.rate}" data-bind="r:${r.key}" aria-label="Rate for ${d[0]}"></td><td class="n">${gbp(r.total)}</td></tr>`}
+  if(!b.rows.length)h+=`<tr><td colspan="4"><div class="empty">Add items to the plan to build the estimate.</div></td></tr>`;
+  h+=`</tbody></table></div>${fNum('r:contingency','Contingency',S.rates.contingency,1,'%')}
+  ${rd([['Subtotal',gbp(b.sub)],['Contingency',gbp(b.cont)]])}
+  <div class="total"><span>Total</span><span>${gbp(b.total)}</span></div>
+  <p class="note">Excludes groundworks to the site, planning and consultant fees, VAT, and install labour for the sauna and decking.</p>
+  <div class="row"><button class="btn" data-act="csv">Copy as CSV</button><button class="btn" data-act="resetrates">Reset rates</button></div></section>`;
+  return h;
+}
+function paneChecks(){
+  const cs=checks(),order={bad:0,warn:1,info:2,ok:3},n=k=>cs.filter(c=>c.level===k).length;
+  cs.sort((a,b)=>order[a.level]-order[b.level]);
+  const lab={bad:'Must resolve',warn:'Design for',info:'Note',ok:'OK'};
+  return`<section><div class="row"><span class="chip bad">${n('bad')} must resolve</span><span class="chip warn">${n('warn')} design for</span><span class="chip ok">${n('ok')} ok</span></div>
+  <p class="note">Guidance to brief your designer and Building Control. It is not a substitute for their sign-off.</p></section>
+  <section>${cs.map(c=>`<div class="check ${c.level}"><span class="chip ${c.level}">${lab[c.level]}</span><h4>${esc(c.title)}</h4><p>${esc(c.body)}</p>${c.level!=='ok'?`<label><input type="checkbox" id="${bid('c-'+c.id)}" data-check="${c.id}"${S.checks[c.id]?' checked':''}> Reviewed</label>`:''}</div>`).join('')}</section>`;
+}
+function renderPane(){
+  const ae=document.activeElement,fid=ae&&ae.id,pane=$('#pane'),st=pane.parentElement.scrollTop;
+  pane.innerHTML=({inspect:paneInspect,site:paneSite,water:paneWater,costs:paneCosts,checks:paneChecks})[tab]();
+  pane.parentElement.scrollTop=st;
+  if(fid){const el=document.getElementById(fid);if(el&&el!==ae&&pane.contains(el))el.focus({preventScroll:true})}
+  document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('on',b.dataset.tab===tab));
+}
+function renderLayers(){
+  const order=['deck','sauna','plunge','steps','shower','hut','bench','store','paving'];
+  const its=[...S.items].sort((a,b)=>order.indexOf(a.type)-order.indexOf(b.type));
+  $('#layers').innerHTML=its.map(i=>`<button data-sel="${i.id}" class="${i.id===selId?'on':''}"><span>${esc(i.name)}</span><span>${i.type==='deck'?fx(i.w,1)+'×'+fx(i.d,1):i.type}</span></button>`).join('')+
+    S.services.map(s=>`<button data-sel="${s.id}" class="${s.id===selId?'on':''}"><span>${SVC[s.kind].label}</span><span>${fx(svcLen(s),1)} m</span></button>`).join('')||'<span class="small">Empty plan</span>';
+}
+
+/* ---------- plan rendering ---------- */
+const plan=$('#plan');
+function vp(){const r=plan.getBoundingClientRect();return{W:r.width||800,H:r.height||600,r}}
+function w2s(x,y){const{W,H}=vp();return[(x-view.cx)*view.s+W/2,(y-view.cy)*view.s+H/2]}
+function s2w(px,py){const{W,H}=vp();return[(px-W/2)/view.s+view.cx,(py-H/2)/view.s+view.cy]}
+function evW(e){const r=plan.getBoundingClientRect();return s2w(e.clientX-r.left,e.clientY-r.top)}
+function niceStep(px){const c=[0.1,0.2,0.25,0.5,1,2,5,10,20,50];for(const v of c)if(v*view.s>=px)return v;return 100}
+
+function renderPlan(){
+  const{W,H}=vp(),s=view.s,tx=W/2-view.cx*s,ty=H/2-view.cy*s,px=1/s;
+  const[x0,y0]=s2w(0,0),[x1,y1]=s2w(W,H);
+  let h=`<rect x="0" y="0" width="${W}" height="${H}" fill="transparent" data-bgr="1"/><g transform="translate(${tx} ${ty}) scale(${s})">`;
+  if(S.bg&&S.bg.src)h+=`<image href="${S.bg.src}" x="0" y="0" width="${S.bg.iw}" height="${S.bg.ih}" opacity="${S.bg.opacity}" transform="translate(${S.bg.x} ${S.bg.y}) rotate(${S.bg.rot}) scale(${S.bg.mpp})" style="pointer-events:none"/>`;
+  // grid
+  const minor=s>=14?1:5;
+  for(let x=Math.floor(x0/minor)*minor;x<=x1;x+=minor)h+=`<line x1="${x}" y1="${y0}" x2="${x}" y2="${y1}" stroke="${Math.round(x)%5===0?'var(--grid-major)':'var(--grid)'}" stroke-width="${px}"/>`;
+  for(let y=Math.floor(y0/minor)*minor;y<=y1;y+=minor)h+=`<line x1="${x0}" y1="${y}" x2="${x1}" y2="${y}" stroke="${Math.round(y)%5===0?'var(--grid-major)':'var(--grid)'}" stroke-width="${px}"/>`;
+  // contours
+  const k=S.site.slope/100;
+  if(k>0){const f=planDir(S.site.fall),p=[-f[1],f[0]];let step=0.1;while(step/k*s<16)step*=2.5;
+    const proj=[[x0,y0],[x1,y0],[x0,y1],[x1,y1]].map(([x,y])=>-(k)*(x*f[0]+y*f[1]));const lo=Math.min(...proj),hi=Math.max(...proj),big=Math.hypot(x1-x0,y1-y0);
+    const cx=(x0+x1)/2,cy=(y0+y1)/2;
+    for(let L=Math.ceil(lo/step)*step;L<=hi;L+=step){const d=-L/k;const cdot=cx*f[0]+cy*f[1];const bx=cx+f[0]*(d-cdot),by=cy+f[1]*(d-cdot);
+      h+=`<line class="contour" x1="${bx-p[0]*big}" y1="${by-p[1]*big}" x2="${bx+p[0]*big}" y2="${by+p[1]*big}" stroke-width="${px}" stroke-dasharray="${4*px} ${3*px}"/>`;
+      const lx=Math.min(x1-40*px,Math.max(x0+8*px,bx+p[0]*((x0+60*px-bx)/(p[0]||1e-9)))),ly=by+p[1]*((lx-bx)/(p[0]||1e-9));
+      if(Math.abs(p[0])>0.3&&ly>y0&&ly<y1)h+=`<text class="contourl" x="${lx}" y="${ly-3*px}" font-size="${10*px}">${L>=0?'+':''}${fx(L)}</text>`;}
+  }
+  // items
+  const order={paving:0,deck:1,steps:2,bench:3,store:3,hut:3,shower:4,sauna:5,plunge:6};
+  const its=[...S.items].sort((a,b)=>order[a.type]-order[b.type]||(a.type==='deck'?a.level-b.level:0));
+  for(const it of its)h+=itemSVG(it,px);
+  for(const dk of S.items.filter(i=>i.type==='deck'))for(const g of guardSegments(dk))h+=`<line class="guard" x1="${g.a[0]}" y1="${g.a[1]}" x2="${g.b[0]}" y2="${g.b[1]}" stroke-width="${5*px}"/>`;
+  // services
+  for(const sv of S.services){const pts=sv.pts.map(p=>p.join(',')).join(' '),sel=sv.id===selId,dash=SVC[sv.kind].dash.split(' ').filter(Boolean).map(v=>v*px).join(' ');
+    h+=`<polyline points="${pts}" fill="none" stroke="transparent" stroke-width="${14*px}" data-svc="${sv.id}" style="cursor:pointer"/><polyline class="svc ${sv.kind}" points="${pts}" stroke-width="${(sel?4:3)*px}" ${dash?`stroke-dasharray="${dash}"`:''} data-svc="${sv.id}"/>`;
+    const e=sv.pts[0];h+=`<circle cx="${e[0]}" cy="${e[1]}" r="${5*px}" class="svc ${sv.kind}" stroke-width="${2*px}" fill="var(--panel)" style="pointer-events:none"/>`;
+    let best=1,bl=0;for(let i=1;i<sv.pts.length;i++){const l=Math.hypot(sv.pts[i][0]-sv.pts[i-1][0],sv.pts[i][1]-sv.pts[i-1][1]);if(l>bl){bl=l;best=i}}
+    if(sv.pts.length>1){const a=sv.pts[best-1],b=sv.pts[best];h+=`<text class="lbl2" x="${(a[0]+b[0])/2+6*px}" y="${(a[1]+b[1])/2-6*px}" font-size="${11*px}" stroke-width="${3*px}">${SVC[sv.kind].label} ${fx(svcLen(sv),1)} m</text>`}
+    if(sel)sv.pts.forEach((p,i)=>h+=`<circle class="vtx" data-v="${i}" cx="${p[0]}" cy="${p[1]}" r="${6*px}" stroke-width="${2*px}"/>`);
+  }
+  if(drawPts&&drawPts.pts.length){const pts=drawPts.pts.concat(drawPts.hover?[drawPts.hover]:[]);h+=`<polyline class="svc ${drawPts.kind}" points="${pts.map(p=>p.join(',')).join(' ')}" stroke-width="${3*px}" stroke-dasharray="${6*px} ${3*px}"/>`}
+  // labels
+  for(const it of its){if(it.type==='bench'||(it.type==='paving'&&s<25))continue;const fs=Math.min(13,Math.max(9,s*0.28))*px;
+    let sub='';if(it.type==='deck')sub=`+${fx(it.level)} · ${fx(it.w*it.d,1)} m²`;else if(it.type==='steps'&&it._c&&it._c.rise>=0.05)sub=`${it._c.n}R × ${Math.round(it._c.riser*1000)} mm`;else if(it.type==='plunge')sub=Math.round(plungeCalc(it).vol)+' L';else if(it.type==='sauna')sub='≈'+saunaCalc(it).seats+' seats';
+    const dl=it.type==='deck'?toWorld(it,0,-it.d/2+0.35):[it.x,it.y],lx=dl[0],ly=dl[1];
+    h+=`<text class="lbl" x="${lx}" y="${ly}" text-anchor="middle" font-size="${fs}" stroke-width="${3*px}">${esc(it.name)}</text>`;
+    if(sub)h+=`<text class="lbl2" x="${lx}" y="${ly+fs*1.15}" text-anchor="middle" font-size="${fs*0.85}" stroke-width="${3*px}">${sub}</text>`}
+  // selection
+  const si=selItem();
+  if(si){const cs=corners(si);
+    if(!isRound(si))h+=`<polygon class="selbox" points="${cs.map(c=>c.join(',')).join(' ')}" stroke-width="${1.5*px}" style="pointer-events:none"/>`;
+    else h+=`<circle class="selbox" cx="${si.x}" cy="${si.y}" r="${si.w/2}" stroke-width="${1.5*px}" style="pointer-events:none"/>`;
+    cs.forEach((c,i)=>h+=`<circle class="hdl" data-h="${i}" cx="${c[0]}" cy="${c[1]}" r="${6*px}" stroke-width="${2*px}"/>`);
+    const rt=toWorld(si,0,-si.d/2-26*px),tp=toWorld(si,0,-si.d/2);
+    h+=`<line x1="${tp[0]}" y1="${tp[1]}" x2="${rt[0]}" y2="${rt[1]}" stroke="var(--accent)" stroke-width="${1.5*px}"/><circle class="hdl rot" data-h="rot" cx="${rt[0]}" cy="${rt[1]}" r="${7*px}" stroke-width="${2*px}"/>`;
+    const dim=(a,b,off,txt)=>{const dx=b[0]-a[0],dy=b[1]-a[1],L=Math.hypot(dx,dy)||1,nx=-dy/L*off,ny=dx/L*off;const A=[a[0]+nx,a[1]+ny],B=[b[0]+nx,b[1]+ny];
+      return`<line x1="${A[0]}" y1="${A[1]}" x2="${B[0]}" y2="${B[1]}" stroke="var(--accent)" stroke-width="${px}" style="pointer-events:none"/><text class="lbl2" x="${(A[0]+B[0])/2+nx*0.6}" y="${(A[1]+B[1])/2+ny*0.6+4*px}" text-anchor="middle" font-size="${11*px}" stroke-width="${3*px}" style="fill:var(--accent)">${txt}</text>`};
+    if(!isRound(si)){h+=dim(cs[2],cs[3],-18*px,fx(si.w)+' m');h+=dim(cs[1],cs[2],-18*px,fx(si.d)+' m')}
+  }
+  if(measure&&measure.a){const b=measure.b||measure.hover;if(b){const L=Math.hypot(b[0]-measure.a[0],b[1]-measure.a[1]);
+    h+=`<line class="meas" x1="${measure.a[0]}" y1="${measure.a[1]}" x2="${b[0]}" y2="${b[1]}" stroke-width="${2*px}" stroke-dasharray="${5*px} ${3*px}"/><circle cx="${measure.a[0]}" cy="${measure.a[1]}" r="${4*px}" fill="var(--accent)"/><circle cx="${b[0]}" cy="${b[1]}" r="${4*px}" fill="var(--accent)"/><text class="lbl" x="${(measure.a[0]+b[0])/2}" y="${(measure.a[1]+b[1])/2-8*px}" text-anchor="middle" font-size="${13*px}" stroke-width="${3*px}">${fx(L)} m</text>`}}
+  h+='</g>';
+  plan.innerHTML=h;
+  plan.classList.toggle('drawing',mode!=='select');
+  // scale bar
+  const sb=niceStep(70);$('#scalebar').innerHTML=`${sb>=1?sb+' m':sb*1000+' mm'}<i style="width:${sb*s}px"></i>`;
+}
+function itemSVG(it,px){
+  const sel=it.id===selId,w=it.w,d=it.d,sw=1.5*px;
+  let g=`<g data-id="${it.id}" class="it${sel?' sel':''}" transform="translate(${it.x} ${it.y}) rotate(${it.rot})">`;
+  const R=(cls,extra='')=>`<rect class="${cls}" x="${-w/2}" y="${-d/2}" width="${w}" height="${d}" stroke-width="${sw}" ${extra}/>`;
+  switch(it.type){
+    case'deck':{g+=R('deck');const sp=view.s*0.15>=5?0.15:0.3;
+      if(it.props.boardDir==='x')for(let y=-d/2+sp;y<d/2-1e-6;y+=sp)g+=`<line class="board" x1="${-w/2}" y1="${y}" x2="${w/2}" y2="${y}" stroke-width="${px}"/>`;
+      else for(let x=-w/2+sp;x<w/2-1e-6;x+=sp)g+=`<line class="board" x1="${x}" y1="${-d/2}" x2="${x}" y2="${d/2}" stroke-width="${px}"/>`;break}
+    case'steps':{g+=R('stepr');const c=it._c;if(c&&c.treads>0)for(let i=1;i<=c.treads-1;i++){const y=-d/2+i*c.going;g+=`<line class="ink" x1="${-w/2}" y1="${y}" x2="${w/2}" y2="${y}" stroke-width="${px}"/>`}
+      const ah=Math.min(0.25,w*0.2);g+=`<path class="ink" d="M0 ${d/2-0.08} L0 ${-d/2+0.1} M${-ah} ${-d/2+0.1+ah} L0 ${-d/2+0.1} L${ah} ${-d/2+0.1+ah}" stroke-width="${2*px}"/>`;break}
+    case'sauna':{if(it.props.style==='barrel'){g+=R('cedar',`rx="${0.08}"`);for(let x=-w/2+0.35;x<w/2-0.2;x+=0.5)g+=`<line class="inner" x1="${x}" y1="${-d/2}" x2="${x}" y2="${d/2}" stroke-width="${px}"/>`}
+      else{g+=R('cedar');g+=`<rect class="inner" x="${-w/2+0.12}" y="${-d/2+0.12}" width="${w-0.24}" height="${d-0.24}" stroke-width="${px}"/>`;
+        g+=`<line class="inner" x1="${-w/2+0.12}" y1="${-d/2+0.62}" x2="${w/2-0.12}" y2="${-d/2+0.62}" stroke-width="${px}"/>`}
+      if(it.props.glass)g+=`<line x1="${-w/2+0.2}" y1="${d/2}" x2="${w/2-0.9}" y2="${d/2}" stroke="var(--water)" stroke-width="${4*px}"/>`;
+      g+=`<path d="M${w/2-0.75} ${d/2} A0.6 0.6 0 0 0 ${w/2-0.15} ${d/2-0.6}" fill="none" stroke="var(--bg)" stroke-width="${px}" stroke-dasharray="${3*px} ${2*px}"/>`;
+      g+=`<rect x="${w/2-0.62}" y="${-d/2+0.18}" width="0.42" height="0.42" fill="var(--ink)" stroke="var(--bg)" stroke-width="${px}"/>`;
+      if(it.props.heater==='wood')g+=`<circle cx="${w/2-0.41}" cy="${-d/2+0.39}" r="0.08" fill="var(--accent)"/>`;break}
+    case'plunge':{if(isRound(it)){g+=`<circle class="water" r="${w/2}" stroke-width="${3*px}"/><circle r="${w/2-0.06}" fill="none" stroke="var(--bg)" stroke-opacity=".6" stroke-width="${px}"/>`}
+      else{g+=R('water',`rx="0.05" stroke-width="${3*px}"`)}break}
+    case'shower':{g+=R('thing',`stroke-dasharray="${4*px} ${3*px}"`);g+=`<circle r="${Math.min(w,d)*0.18}" fill="var(--water)" stroke="var(--ink)" stroke-width="${px}"/>`;break}
+    case'paving':g+=R('pave');break;
+    case'bench':g+=R('deck');break;
+    default:g+=R('thing');
+  }
+  return g+'</g>';
+}
+function renderCompass(){
+  const s=S.site,sd=sunDay(),C=60,r=46,pt=(b,rr)=>{const t=(s.north+b)*D2R;return[C+Math.sin(t)*rr,C-Math.cos(t)*rr]};
+  let h=`<svg width="120" height="120" viewBox="0 0 120 120" role="img" aria-label="Compass, sea direction and sun path"><circle cx="${C}" cy="${C}" r="${r}" fill="none" stroke="var(--line)"/>`;
+  // sun path
+  const day=sd.pts.filter(p=>p.alt>0);
+  if(day.length){h+=`<polyline fill="none" stroke="var(--warn)" stroke-width="1.5" stroke-opacity=".7" points="${day.map(p=>pt(p.az,r*(1-p.alt/90)).join(',')).join(' ')}"/>`}
+  if(sd.now.alt>0){const p=pt(sd.now.az,r*(1-sd.now.alt/90));h+=`<circle cx="${p[0]}" cy="${p[1]}" r="5" fill="var(--warn)"/>`}
+  const sea=pt(s.sea,r),seaL=pt(s.sea,r+9);h+=`<line x1="${C}" y1="${C}" x2="${sea[0]}" y2="${sea[1]}" stroke="var(--sea)" stroke-width="2" stroke-dasharray="3 2"/><text x="${seaL[0]}" y="${seaL[1]+3}" text-anchor="middle" fill="var(--sea)" font-size="9" font-family="var(--f-mono)">SEA</text>`;
+  const sw=pt(225,r),swi=pt(225,r-14);h+=`<line x1="${sw[0]}" y1="${sw[1]}" x2="${swi[0]}" y2="${swi[1]}" stroke="var(--muted)" stroke-width="1.5" marker-end="url(#ah)"/>`;
+  const n=pt(0,r-4),nl=pt(0,r+9),ns=pt(180,12),nw=pt(-90,6),ne=pt(90,6);
+  h+=`<defs><marker id="ah" viewBox="0 0 6 6" refX="3" refY="3" markerWidth="5" markerHeight="5" orient="auto"><path d="M0 0L6 3L0 6z" fill="var(--muted)"/></marker></defs>`;
+  h+=`<polygon points="${n.join(',')} ${nw.join(',')} ${ns.join(',')} ${ne.join(',')}" fill="var(--ink)"/><text x="${nl[0]}" y="${nl[1]+3}" text-anchor="middle" fill="var(--ink)" font-size="10" font-weight="700" font-family="var(--f-mono)">N</text></svg>`;
+  h+=`<div>sun ${hm(sd.rise)}–${hm(sd.set)} · ${s.date.slice(5)}</div><div>→ prevailing SW wind</div>`;
+  $('#compass').innerHTML=h;
+}
+function renderHint(){
+  let h='';
+  if(mode.startsWith('draw-')){const k=mode.slice(5);h=`<div class="hint">Drawing ${SVC[k].label.toLowerCase()}: click each bend, Enter or double-click to finish.<button data-act="finish">Finish</button><button data-act="cancel">Cancel</button></div>`}
+  else if(mode==='measure'){if(measure&&measure.b){const L=Math.hypot(measure.b[0]-measure.a[0],measure.b[1]-measure.a[1]);
+    h=`<div class="hint">Measured ${fx(L)} m.${S.bg?` Real length <input id="cal-len" type="number" step="0.01" value="${fx(L)}" style="width:70px;background:var(--bg);color:var(--ink);border:0;border-radius:3px;padding:2px 4px"> m <button data-act="calibrate">Scale photo to this</button>`:''}<button data-act="remeasure">Again</button><button data-act="cancel">Done</button></div>`}
+    else h=`<div class="hint">Measure: click two points.${S.bg?' Measure a known length on the photo to scale it.':''}<button data-act="cancel">Done</button></div>`}
+  else if(S.example&&S.items.length)h=`<div class="hint">Example layout. Edit it, or start from a blank site.<button data-act="blank">Blank site</button><button data-act="keep">Keep editing</button></div>`;
+  $('#hintwrap').innerHTML=h;
+}
+function renderAll(){resolve();renderPlan();renderCompass();renderHint();renderLayers();renderPane();mark3D();
+  $('#b-undo').disabled=undoStack.length<2;$('#b-redo').disabled=!redoStack.length;
+  document.querySelectorAll('#pal-svc button').forEach(b=>b.classList.toggle('on',mode==='draw-'+b.dataset.svc));$('#t-measure').classList.toggle('on',mode==='measure')}
+function liveUpdate(){resolve();renderPlan();renderCompass();const ro=$('#readout'),it=selItem();if(ro&&it)ro.innerHTML=readout(it);mark3D()}
+
+/* ---------- plan interaction ---------- */
+let drag=null;const ptrs=new Map();
+function zoomAt(px,py,f){const[wx,wy]=s2w(px,py);view.s=Math.max(4,Math.min(400,view.s*f));const[nx,ny]=s2w(px,py);view.cx+=wx-nx;view.cy+=wy-ny;renderPlan()}
+function fit(){const pts=[];S.items.forEach(i=>pts.push(...corners(i)));S.services.forEach(s=>pts.push(...s.pts));if(!pts.length){view={cx:0,cy:0,s:40};renderPlan();return}
+  const xs=pts.map(p=>p[0]),ys=pts.map(p=>p[1]),{W,H}=vp();const minx=Math.min(...xs),maxx=Math.max(...xs),miny=Math.min(...ys),maxy=Math.max(...ys);
+  view.cx=(minx+maxx)/2;view.cy=(miny+maxy)/2;view.s=Math.max(4,Math.min(160,Math.min((W-120)/Math.max(1,maxx-minx),(H-120)/Math.max(1,maxy-miny))));renderPlan()}
+plan.addEventListener('wheel',e=>{e.preventDefault();const r=plan.getBoundingClientRect();zoomAt(e.clientX-r.left,e.clientY-r.top,Math.exp(-e.deltaY*0.0015))},{passive:false});
+plan.addEventListener('pointerdown',e=>{
+  plan.setPointerCapture(e.pointerId);ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  if(ptrs.size===2){const[a,b]=[...ptrs.values()];drag={kind:'pinch',d0:Math.hypot(a.x-b.x,a.y-b.y),s0:view.s};return}
+  const w=evW(e),sw=[snapV(w[0]),snapV(w[1])];
+  if(mode.startsWith('draw-')){if(!drawPts)drawPts={kind:mode.slice(5),pts:[]};const last=drawPts.pts.at(-1);if(!last||Math.hypot(last[0]-sw[0],last[1]-sw[1])>0.01)drawPts.pts.push(sw);renderPlan();return}
+  if(mode==='measure'){if(!measure||measure.b)measure={a:w};else measure.b=w;renderPlan();renderHint();return}
+  const hd=e.target.closest('[data-h]'),vx=e.target.closest('[data-v]'),itg=e.target.closest('[data-id]'),svg_=e.target.closest('[data-svc]');
+  const si=selItem(),sv=selSvc();
+  if(hd&&si){if(hd.dataset.h==='rot')drag={kind:'rot',it:si};else{const k=+hd.dataset.h,sg=[[-1,-1],[1,-1],[1,1],[-1,1]][k];drag={kind:'resize',it:si,sg,O:toWorld(si,-sg[0]*si.w/2,-sg[1]*si.d/2)}}return}
+  if(vx&&sv){drag={kind:'vtx',sv,i:+vx.dataset.v};return}
+  if(itg){const it=S.items.find(i=>i.id===itg.dataset.id);if(selId!==it.id){selId=it.id;tab='inspect';renderAll()}
+    const kids=it.type==='deck'?S.items.filter(o=>o.type!=='deck'&&o.type!=='paving'&&inside(it,o.x,o.y)).map(o=>({o,dx:o.x-it.x,dy:o.y-it.y})):[];
+    drag={kind:'move',it,ox:w[0]-it.x,oy:w[1]-it.y,kids,moved:false};return}
+  if(svg_){selId=svg_.dataset.svc;tab='inspect';renderAll();return}
+  if(selId){selId=null;renderAll()}
+  drag={kind:'pan',sx:e.clientX,sy:e.clientY,cx:view.cx,cy:view.cy};plan.classList.add('panning');
+});
+plan.addEventListener('pointermove',e=>{
+  if(ptrs.has(e.pointerId))ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  const w=evW(e);
+  if(!drag){if(drawPts){drawPts.hover=[snapV(w[0]),snapV(w[1])];renderPlan()}else if(measure&&measure.a&&!measure.b){measure.hover=w;renderPlan()}return}
+  if(drag.kind==='pinch'){if(ptrs.size<2)return;const[a,b]=[...ptrs.values()],d=Math.hypot(a.x-b.x,a.y-b.y),r=plan.getBoundingClientRect();zoomAt((a.x+b.x)/2-r.left,(a.y+b.y)/2-r.top,(drag.s0*d/drag.d0)/view.s);return}
+  if(drag.kind==='pan'){view.cx=drag.cx-(e.clientX-drag.sx)/view.s;view.cy=drag.cy-(e.clientY-drag.sy)/view.s;renderPlan();return}
+  const it=drag.it;
+  if(drag.kind==='move'){it.x=snapV(w[0]-drag.ox);it.y=snapV(w[1]-drag.oy);for(const k of drag.kids){k.o.x=it.x+k.dx;k.o.y=it.y+k.dy}drag.moved=true}
+  else if(drag.kind==='rot'){let a=Math.atan2(w[0]-it.x,-(w[1]-it.y))*R2D;a=e.shiftKey?Math.round(a):Math.round(a/5)*5;it.rot=((a%360)+360)%360}
+  else if(drag.kind==='resize'){const{c,s}=frame(it),vx_=w[0]-drag.O[0],vy_=w[1]-drag.O[1];const lx=vx_*c+vy_*s,ly=-vx_*s+vy_*c;
+    let nw=Math.max(0.3,snapV(lx*drag.sg[0])),nd=Math.max(0.3,snapV(ly*drag.sg[1]));
+    if(isRound(it))nd=nw=Math.max(nw,nd);if(it.type==='steps')nd=it.d;
+    it.w=nw;it.d=nd;it.x=drag.O[0]+(drag.sg[0]*nw/2)*c-(drag.sg[1]*nd/2)*s;it.y=drag.O[1]+(drag.sg[0]*nw/2)*s+(drag.sg[1]*nd/2)*c}
+  else if(drag.kind==='vtx'){drag.sv.pts[drag.i]=[snapV(w[0]),snapV(w[1])];drag.moved=true}
+  liveUpdate();
+});
+function endPtr(e){ptrs.delete(e.pointerId);plan.classList.remove('panning');if(!drag)return;const k=drag.kind;if(k==='pinch'&&ptrs.size)return;drag=null;if(k!=='pan'&&k!=='pinch')commit()}
+plan.addEventListener('pointerup',endPtr);plan.addEventListener('pointercancel',endPtr);
+plan.addEventListener('dblclick',e=>{if(mode.startsWith('draw-'))finishDraw()});
+function finishDraw(){if(drawPts){const p=drawPts.pts.filter((q,i,a)=>!i||Math.hypot(q[0]-a[i-1][0],q[1]-a[i-1][1])>0.02);if(p.length>=2){const sv={id:uid(),kind:drawPts.kind,pts:p};S.services.push(sv);selId=sv.id}}drawPts=null;mode='select';commit()}
+function setMode(m){if(drawPts&&!m.startsWith('draw-'))drawPts=null;mode=m;measure=null;if(m.startsWith('draw-'))drawPts={kind:m.slice(5),pts:[]};renderAll()}
+
+function addItem(type,variant){
+  const v=variant||{},over={},props={};for(const k in v)(k in TYPES[type].props?props:over)[k]=v[k];
+  const it=mk(type,over,props);it.x=snapV(view.cx);it.y=snapV(view.cy);
+  if(type==='deck'){it.level=+fx(groundAt(it.x,it.y)+0.45)}
+  if(type==='sauna'&&v.style==='barrel')it.name='Barrel sauna';
+  if(type==='steps'){const dk=S.items.filter(i=>i.type==='deck').at(-1);if(dk){const p=toWorld(dk,0,dk.d/2);it.rot=dk.rot;it.x=p[0];it.y=p[1]+0.5}}
+  const same=S.items.filter(i=>i.name===it.name).length;if(same)it.name+=' '+(same+1);
+  S.items.push(it);selId=it.id;tab='inspect';S.example=false;commit();
+}
+function delSel(){if(!selId)return;S.items=S.items.filter(i=>i.id!==selId);S.services=S.services.filter(s=>s.id!==selId);selId=null;commit()}
+function dupSel(){const it=selItem();if(!it)return;const c=clone(it);c.id=uid();c.x+=0.5;c.y+=0.5;c.name=it.name+' copy';S.items.push(c);selId=c.id;commit()}
+
+/* ---------- pane input binding ---------- */
+function applyBind(el){
+  const[ns,path]=el.dataset.bind.split(':');let v=el.dataset.t==='chk'?el.checked:el.dataset.t==='text'?el.value:parseFloat(el.value);
+  if(typeof v==='number'&&!isFinite(v))return false;
+  let tgt;if(ns==='i')tgt=selItem();else if(ns==='s')tgt=S.site;else if(ns==='r')tgt=S.rates;else if(ns==='v')tgt=selSvc();if(!tgt)return false;
+  if(path==='props.joist')v=+v;
+  if(ns==='i'&&(path==='w'||path==='d'))v=Math.max(0.2,v);
+  if(ns==='i'&&path==='h')v=Math.max(0.05,v);
+  if(ns==='i'&&path==='props.going')v=Math.max(0.15,v);
+  const ks=path.split('.');let o=tgt;for(let i=0;i<ks.length-1;i++)o=o[ks[i]];o[ks.at(-1)]=v;
+  if(ns==='i'){const it=tgt;if(isRound(it))it.d=it.w;if(path==='props.style'&&v==='barrel'&&it.h>2.2)it.h=2.0;if(path==='name')renderLayers()}
+  if(ns==='s'||ns==='i')S.example=false;
+  return true;
+}
+const pane=$('#pane');
+pane.addEventListener('input',e=>{const el=e.target;if(!el.dataset.bind||el.tagName==='SELECT'||el.type==='checkbox'||el.dataset.bind.startsWith('r:'))return;if(applyBind(el))liveUpdate()});
+pane.addEventListener('change',e=>{const el=e.target;if(el.dataset.check){S.checks[el.dataset.check]=el.checked;save();return}if(!el.dataset.bind)return;if(applyBind(el)||el.dataset.t==='text')commit()});
+pane.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
+  if(b.dataset.sun){S.site.date=b.dataset.sun;commit();return}
+  const a=b.dataset.act;if(a==='del')delSel();if(a==='dup')dupSel();
+  if(a==='resetrates'){S.rates=defaultRates();commit()}
+  if(a==='csv'){const B=bom();const lines=[['Group','Item','Qty','Unit','Rate GBP','Total GBP','Note']].concat(B.rows.map(r=>[r.g,RATE_DEFS[r.key][0],fx(r.qty,2),RATE_DEFS[r.key][1],r.rate,fx(r.total,0),r.note]));lines.push(['','Contingency '+S.rates.contingency+'%','','','',fx(B.cont,0),''],['','Total','','','',fx(B.total,0),'']);copyText(lines.map(l=>l.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n'),'Estimate copied as CSV')}
+});
+document.querySelector('.tabs').addEventListener('click',e=>{const b=e.target.closest('[data-tab]');if(b){tab=b.dataset.tab;renderPane()}});
+$('#layers').addEventListener('click',e=>{const b=e.target.closest('[data-sel]');if(b){selId=b.dataset.sel;tab='inspect';renderAll()}});
+$('#hintwrap').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const a=b.dataset.act;
+  if(a==='finish')finishDraw();else if(a==='cancel'){drawPts=null;setMode('select')}else if(a==='remeasure'){measure=null;renderPlan();renderHint()}
+  else if(a==='blank'){showModal('blank')}else if(a==='keep'){S.example=false;commit()}
+  else if(a==='calibrate'){const real=parseFloat($('#cal-len').value),L=Math.hypot(measure.b[0]-measure.a[0],measure.b[1]-measure.a[1]);if(real>0&&L>0&&S.bg){const k=real/L,A=measure.a;S.bg.mpp*=k;S.bg.x=A[0]+(S.bg.x-A[0])*k;S.bg.y=A[1]+(S.bg.y-A[1])*k;measure=null;mode='select';commit();toast('Photo scaled: '+fx(real)+' m')}}});
+
+/* ---------- palette ---------- */
+$('#pal').innerHTML=PALETTE.map(([t,v,l],i)=>`<button data-i="${i}"><span class="sw" style="background:${TYPES[t].sw}${t==='plunge'&&v&&v.shape==='round'?';border-radius:50%':''}"></span>${l}</button>`).join('');
+$('#pal').addEventListener('click',e=>{const b=e.target.closest('[data-i]');if(!b)return;const[t,v]=PALETTE[+b.dataset.i];addItem(t,v)});
+$('#pal-svc').innerHTML=Object.entries(SVC).map(([k,v])=>`<button data-svc="${k}"><span class="sw" style="background:var(--${k})"></span>${v.label}</button>`).join('');
+$('#pal-svc').addEventListener('click',e=>{const b=e.target.closest('[data-svc]');if(!b)return;setMode(mode==='draw-'+b.dataset.svc?'select':'draw-'+b.dataset.svc);setView('plan')});
+$('#t-measure').onclick=()=>{setMode(mode==='measure'?'select':'measure');setView('plan')};
+$('#t-fit').onclick=()=>fit();
+$('#t-bg').onclick=()=>showModal('bg');
+$('#z-in').onclick=()=>{const{W,H}=vp();zoomAt(W/2,H/2,1.25)};
+$('#z-out').onclick=()=>{const{W,H}=vp();zoomAt(W/2,H/2,0.8)};
+$('#b-undo').onclick=undo;$('#b-redo').onclick=redo;$('#b-file').onclick=()=>showModal('file');
+
+document.addEventListener('keydown',e=>{
+  if(e.target.closest('input,textarea,select'))return;
+  const mod=e.ctrlKey||e.metaKey;
+  if(mod&&e.key.toLowerCase()==='z'){e.preventDefault();e.shiftKey?redo():undo();return}
+  if(mod&&e.key.toLowerCase()==='y'){e.preventDefault();redo();return}
+  if(mod&&e.key.toLowerCase()==='d'){e.preventDefault();dupSel();return}
+  if(e.key==='Enter'&&mode.startsWith('draw-')){finishDraw();return}
+  if(e.key==='Escape'){if(mode!=='select'){drawPts=null;setMode('select')}else if(!$('#modal').hidden)hideModal();else{selId=null;renderAll()}return}
+  if((e.key==='Delete'||e.key==='Backspace')&&selId){e.preventDefault();delSel();return}
+  const it=selItem();if(!it)return;const st=e.shiftKey?0.5:0.05;
+  const mv={ArrowLeft:[-st,0],ArrowRight:[st,0],ArrowUp:[0,-st],ArrowDown:[0,st]}[e.key];
+  if(mv){e.preventDefault();it.x=+(it.x+mv[0]).toFixed(3);it.y=+(it.y+mv[1]).toFixed(3);commit()}
+  if(e.key==='r'||e.key==='R'){it.rot=(it.rot+15)%360;commit()}
+});
+
+/* ---------- modal: save/load, underlay ---------- */
+function toast(t){const d=document.createElement('div');d.className='toast';d.textContent=t;document.body.appendChild(d);setTimeout(()=>d.remove(),2200)}
+function copyText(t,msg){const done=()=>toast(msg);try{navigator.clipboard.writeText(t).then(done,()=>fallback())}catch(e){fallback()}
+  function fallback(){showModal('text',t)}}
+function exportJSON(){const o=clone(S);return JSON.stringify(o,null,1)}
+function showModal(kind,payload){
+  const m=$('#modal');let h='';
+  if(kind==='file')h=`<h3>Save &amp; load</h3><p class="note">Your design saves automatically in this browser. Export a copy to keep it safe or share it.</p>
+    <div class="row"><button class="btn primary" data-m="dl">Download .json</button><button class="btn" data-m="copy">Copy design JSON</button><button class="btn" data-m="svg">Download plan .svg</button></div>
+    <label class="note" for="imp-file">Open a saved design</label><input type="file" id="imp-file" accept="application/json,.json">
+    <label class="note" for="imp-txt">…or paste design JSON</label><textarea id="imp-txt" placeholder='{"site":{…},"items":[…]}'></textarea>
+    <div class="row"><button class="btn" data-m="paste">Load pasted design</button><button class="btn" data-m="ex">Load example</button><button class="btn danger" data-m="blankask">Start blank site</button><span style="flex:1"></span><button class="btn" data-m="close">Close</button></div><div id="m-msg" class="note"></div>`;
+  if(kind==='blank')h=`<h3>Start a blank site?</h3><p>This clears every item and run from the plan. Site settings and rates stay. You can undo it.</p><div class="row"><button class="btn danger" data-m="blank">Clear the plan</button><button class="btn" data-m="close">Cancel</button></div>`;
+  if(kind==='text')h=`<h3>Copy this</h3><p class="note">Your browser blocked the clipboard. Select all and copy.</p><textarea id="m-text" readonly>${esc(payload)}</textarea><div class="row"><button class="btn" data-m="close">Close</button></div>`;
+  if(kind==='bg'){const b=S.bg;h=`<h3>Site photo underlay</h3><p class="note">Add an aerial screenshot, OS extract or survey drawing of the spot, then trace over it. Scale it by measuring something of known length with Measure / calibrate.</p>
+    <div class="row"><button class="btn primary" data-m="pick">${b?'Replace image':'Choose image'}</button>${b?'<button class="btn danger" data-m="bgdel">Remove</button>':''}</div>
+    ${b?`<div class="pane" style="padding:0">${fNum('b:x','Position x',b.x,0.5)}${fNum('b:y','Position y',b.y,0.5)}${fNum('b:rot','Rotation',b.rot,1,'°')}${fNum('b:width','Width on plan',b.mpp*b.iw,0.5)}<label class="fld"><span>Opacity</span><span class="inp"><input id="f-b-opacity" type="range" min="0.1" max="1" step="0.05" value="${b.opacity}" data-bbind="opacity"></span></label></div>`:''}
+    <div class="row"><span style="flex:1"></span><button class="btn" data-m="close">Close</button></div>`}
+  m.innerHTML=`<div class="card" role="dialog" aria-modal="true">${h}</div>`;m.hidden=false;
+  if(kind==='text'){const t=$('#m-text');t.focus();t.select()}
+  const fi=$('#imp-file');if(fi)fi.onchange=()=>{const f=fi.files[0];if(!f)return;const r=new FileReader();r.onload=()=>loadText(r.result);r.readAsText(f)};
+}
+function hideModal(){$('#modal').hidden=true;$('#modal').innerHTML=''}
+function loadText(t){try{const o=JSON.parse(t);if(!o.items)throw new Error('no items');const bg=S.bg;S=normalise(o);if(!S.bg||!S.bg.src)S.bg=bg&&o.bg?bg:null;selId=null;hideModal();commit();fit();toast('Design loaded')}catch(e){const m=$('#m-msg');if(m)m.textContent='That is not a design file from this tool. Check you pasted the whole JSON.'}}
+function download(name,text,type){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type}));a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},500);toast('Download started. If nothing appears, use Copy instead.')}
+$('#modal').addEventListener('click',e=>{if(e.target.id==='modal'){hideModal();return}const b=e.target.closest('[data-m]');if(!b)return;const a=b.dataset.m;
+  if(a==='close')hideModal();
+  if(a==='dl')download('north-landing-sauna.json',exportJSON(),'application/json');
+  if(a==='copy')copyText(exportJSON(),'Design JSON copied');
+  if(a==='svg'){const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="${plan.clientWidth}" height="${plan.clientHeight}"><style>${[...document.styleSheets].flatMap(s=>{try{return[...s.cssRules].map(r=>r.cssText)}catch(e){return[]}}).join('\n')}</style>${plan.innerHTML}</svg>`;download('north-landing-plan.svg',svg,'image/svg+xml')}
+  if(a==='paste')loadText($('#imp-txt').value);
+  if(a==='ex'){const bg=S.bg;S=example();S.bg=bg;selId=null;hideModal();commit();fit()}
+  if(a==='blankask')showModal('blank');
+  if(a==='blank'){S.items=[];S.services=[];S.example=false;selId=null;hideModal();commit();toast('Plan cleared. Undo brings it back.')}
+  if(a==='pick')$('#bg-file').click();
+  if(a==='bgdel'){S.bg=null;hideModal();commit()}
+});
+$('#modal').addEventListener('input',e=>{const el=e.target;if(!S.bg)return;
+  if(el.dataset.bbind==='opacity'){S.bg.opacity=+el.value;renderPlan();return}
+  if(el.dataset.bind&&el.dataset.bind.startsWith('b:')){const k=el.dataset.bind.slice(2),v=parseFloat(el.value);if(!isFinite(v))return;if(k==='width'){if(v>0)S.bg.mpp=v/S.bg.iw}else S.bg[k]=v;renderPlan()}});
+$('#modal').addEventListener('change',()=>{if(S.bg)save()});
+$('#bg-file').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{const img=new Image();img.onload=()=>{
+    // downscale to keep storage sane
+    const max=2000,k=Math.min(1,max/Math.max(img.width,img.height)),c=document.createElement('canvas');c.width=Math.round(img.width*k);c.height=Math.round(img.height*k);c.getContext('2d').drawImage(img,0,0,c.width,c.height);
+    const src=c.toDataURL('image/jpeg',0.82),widthM=40,mpp=widthM/c.width;
+    S.bg={src,iw:c.width,ih:c.height,mpp,x:view.cx-widthM/2,y:view.cy-c.height*mpp/2,rot:0,opacity:0.7};
+    commit();showModal('bg');toast('Photo added at 40 m wide. Measure a known length to scale it.');
+    try{localStorage.setItem(BGKEY,src)}catch(err){toast('Photo too large to keep after reload. It stays for this session.')}};img.src=r.result};r.readAsDataURL(f);e.target.value=''};
+
+/* ---------- 3D ---------- */
+const V3={on:false,init:false,dirty:true,orb:{th:-0.6,ph:0.95,r:16},target:null};
+function setView(v){V3.on=v==='3d';$('#v-plan').classList.toggle('on',!V3.on);$('#v-3d').classList.toggle('on',V3.on);$('#view3d').hidden=!V3.on;plan.style.visibility=V3.on?'hidden':'visible';$('#zoombtns').hidden=V3.on;$('#scalebar').parentElement.hidden=V3.on;
+  if(V3.on){if(!window.THREE){$('#view3d').innerHTML='<div class="empty" style="margin:60px 16px">The 3D library did not load. Check your connection and reload; the plan and calculations still work.</div>';return}init3D();build3D()}else renderPlan()}
+$('#v-plan').onclick=()=>setView('plan');$('#v-3d').onclick=()=>{if(mode!=='select')setMode('select');setView('3d')};
+let t3=null;function mark3D(){V3.dirty=true;if(V3.on){clearTimeout(t3);t3=setTimeout(build3D,60)}}
+function init3D(){if(V3.init)return;V3.init=true;const el=$('#view3d');
+  const r=new THREE.WebGLRenderer({antialias:true});r.setPixelRatio(Math.min(2,devicePixelRatio));r.shadowMap.enabled=true;r.shadowMap.type=THREE.PCFSoftShadowMap;el.appendChild(r.domElement);
+  V3.r=r;V3.scene=new THREE.Scene();V3.cam=new THREE.PerspectiveCamera(45,1,0.1,500);
+  V3.hemi=new THREE.HemisphereLight(0xdfeaf0,0x5a6b4a,0.65);V3.scene.add(V3.hemi);
+  V3.sun=new THREE.DirectionalLight(0xfff1dc,0.9);V3.sun.castShadow=true;V3.sun.shadow.mapSize.set(2048,2048);const sc=V3.sun.shadow.camera;sc.left=-18;sc.right=18;sc.top=18;sc.bottom=-18;sc.near=1;sc.far=120;V3.sun.shadow.bias=-0.0005;V3.scene.add(V3.sun);V3.scene.add(V3.sun.target);
+  V3.group=new THREE.Group();V3.scene.add(V3.group);
+  const cv=r.domElement,P=new Map();let last=null,pd=0;
+  cv.addEventListener('pointerdown',e=>{cv.setPointerCapture(e.pointerId);P.set(e.pointerId,[e.clientX,e.clientY]);last=[e.clientX,e.clientY];if(P.size===2){const[a,b]=[...P.values()];pd=Math.hypot(a[0]-b[0],a[1]-b[1])}});
+  cv.addEventListener('pointermove',e=>{if(!P.has(e.pointerId))return;P.set(e.pointerId,[e.clientX,e.clientY]);
+    if(P.size===2){const[a,b]=[...P.values()],d=Math.hypot(a[0]-b[0],a[1]-b[1]);if(pd)V3.orb.r=Math.max(3,Math.min(80,V3.orb.r*pd/d));pd=d;draw3D();return}
+    const dx=e.clientX-last[0],dy=e.clientY-last[1];last=[e.clientX,e.clientY];
+    if(e.shiftKey||e.buttons===2){const f=V3.orb.r*0.0015,c=Math.cos(V3.orb.th),s=Math.sin(V3.orb.th);V3.target.x-=(dx*c)*f;V3.target.z-=(-dx*s)*f;V3.target.z-=(dy*c)*f;V3.target.x-=(dy*s)*f}
+    else{V3.orb.th-=dx*0.008;V3.orb.ph=Math.max(0.12,Math.min(1.5,V3.orb.ph-dy*0.006))}draw3D()});
+  const up=e=>{P.delete(e.pointerId);pd=0};cv.addEventListener('pointerup',up);cv.addEventListener('pointercancel',up);cv.addEventListener('contextmenu',e=>e.preventDefault());
+  cv.addEventListener('wheel',e=>{e.preventDefault();V3.orb.r=Math.max(3,Math.min(80,V3.orb.r*Math.exp(e.deltaY*0.0012)));draw3D()},{passive:false});
+  new ResizeObserver(()=>{if(V3.on)draw3D()}).observe(el);
+}
+const M3={};function mat(c,o={}){const k=c+JSON.stringify(o);return M3[k]||(M3[k]=new THREE.MeshStandardMaterial(Object.assign({color:c,roughness:0.85,metalness:0},o)))}
+function bx(w,h,d,c,x,y,z,par,o){const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat(c,o));m.position.set(x,y,z);m.castShadow=m.receiveShadow=true;par.add(m);return m}
+function build3D(){
+  if(!V3.init)return;const G=V3.group;
+  G.traverse(o=>{if(o.geometry)o.geometry.dispose()});G.clear();
+  const dark=matchMedia('(prefers-color-scheme: dark)').matches&&document.documentElement.dataset.theme!=='light'||document.documentElement.dataset.theme==='dark';
+  // ground
+  const gg=new THREE.PlaneGeometry(90,90,45,45);gg.rotateX(-Math.PI/2);const pos=gg.attributes.position;for(let i=0;i<pos.count;i++)pos.setY(i,groundAt(pos.getX(i),pos.getZ(i)));gg.computeVertexNormals();
+  const gm=new THREE.Mesh(gg,mat(0x6f8a52,{roughness:1}));gm.receiveShadow=true;G.add(gm);
+  const add=(it)=>{const g=new THREE.Group();g.position.set(it.x,0,it.y);g.rotation.y=-it.rot*D2R;G.add(g);return g};
+  const lg=(it,lx,ly)=>{const p=toWorld(it,lx,ly);return groundAt(p[0],p[1])};
+  for(const it of S.items){const g=add(it),w=it.w,d=it.d;
+    if(it.type==='deck'){const L=it.level,boards={thermo:0x8a6141,larch:0xc79a63,composite:0x7c776f,hardwood:0x7a4a2e}[it.props.material];
+      bx(w,0.028,d,boards,0,L-0.014,0,g);bx(w-0.06,0.15,d-0.06,0x5b4632,0,L-0.028-0.075,0,g);
+      const along=it.props.boardDir==='x',A=along?w:d,C=along?d:w,nb=Math.ceil(C/1.8)+1,np=Math.ceil(A/1.8)+1;
+      for(let i=0;i<nb;i++)for(let j=0;j<np;j++){let a=-A/2+0.1+j*(A-0.2)/(np-1),c=-C/2+0.1+i*(C-0.2)/(nb-1);const lx=along?a:c,ly=along?c:a,gr=lg(it,lx,ly),top=L-0.18;if(top-gr>0.03)bx(0.09,top-gr,0.09,0x4a3b2c,lx,gr+(top-gr)/2,ly,g)}
+      for(const sg of guardSegments(it)){const len=Math.hypot(sg.b[0]-sg.a[0],sg.b[1]-sg.a[1]),ang=Math.atan2(sg.b[1]-sg.a[1],sg.b[0]-sg.a[0]);const rg=new THREE.Group();rg.position.set((sg.a[0]+sg.b[0])/2,0,(sg.a[1]+sg.b[1])/2);rg.rotation.y=-ang;G.add(rg);
+        bx(len,0.05,0.09,0x8a6141,0,L+1.1,0,rg);bx(len,0.04,0.04,0x8a6141,0,L+0.1,0,rg);const n=Math.max(1,Math.ceil(len/1.2));for(let k=0;k<=n;k++)bx(0.07,1.1,0.07,0x6b4a30,-len/2+k*len/n,L+0.55,0,rg);
+        const nbal=Math.floor(len/0.11);for(let k=1;k<nbal;k++)bx(0.025,0.98,0.025,0x8a6141,-len/2+k*len/nbal,L+0.6,0,rg)}}
+    else if(it.type==='steps'){const c=it._c;if(!c||c.rise<0.05)continue;const g0=c.g;
+      for(let i=0;i<c.treads;i++){const top=g0+c.riser*(i+1),y1=d/2-c.going*i,y0=Math.max(-d/2,d/2-c.going*(i+1));bx(w,top-g0+0.02,y1-y0,0x9b7350,0,g0+(top-g0)/2-0.01,(y0+y1)/2,g)}
+      if(c.handrails){const sides=c.handrails===2?[-1,1]:[1];for(const sd of sides){const len=Math.hypot(c.run,c.rise),m=new THREE.Mesh(new THREE.BoxGeometry(0.05,0.05,len+0.3),mat(0x6b4a30));m.position.set(sd*(w/2-0.03),g0+c.rise/2+0.95,0);m.rotation.x=Math.atan2(c.rise,c.run);m.castShadow=true;g.add(m);
+        bx(0.06,0.95+c.riser,0.06,0x6b4a30,sd*(w/2-0.03),g0+(0.95+c.riser)/2,d/2-0.05,g);bx(0.06,1,0.06,0x6b4a30,sd*(w/2-0.03),c.top+0.5,-d/2+0.05,g)}}}
+    else if(it.type==='sauna'){const b=itemBase(it),wood=0x7b4a2d,dk2=0x3a2a20;
+      if(it.props.style==='barrel'){const r=d/2,cg=new THREE.CylinderGeometry(r,r,w,40);cg.rotateZ(Math.PI/2);const m=new THREE.Mesh(cg,mat(wood));m.position.set(0,b+r+0.1,0);m.castShadow=m.receiveShadow=true;g.add(m);
+        for(const sx of[-w/2+0.25,w/2-0.25]){const bg=new THREE.CylinderGeometry(r+0.012,r+0.012,0.04,40);bg.rotateZ(Math.PI/2);const bm=new THREE.Mesh(bg,mat(0x222222,{metalness:.6,roughness:.4}));bm.position.set(sx,b+r+0.1,0);g.add(bm)}
+        bx(0.15,0.1,d*0.7,dk2,-w/2+0.3,b+0.05,0,g);bx(0.15,0.1,d*0.7,dk2,w/2-0.3,b+0.05,0,g);
+        if(it.props.glass){const gl=new THREE.Mesh(new THREE.CircleGeometry(r*0.85,40),mat(0x24404a,{roughness:.1,metalness:.3}));gl.position.set(w/2+0.002,b+r+0.1,0);gl.rotation.y=Math.PI/2;g.add(gl)}
+        if(it.props.heater==='wood'){const ch=new THREE.Mesh(new THREE.CylinderGeometry(0.08,0.08,1.1,16),mat(0x2a2a2a,{metalness:.7,roughness:.4}));ch.position.set(w/2-0.6,b+d+0.5,-r*0.35);ch.castShadow=true;g.add(ch)}}
+      else{const hw=Math.max(1.9,it.h-0.4);bx(w,hw,d,wood,0,b+hw/2,0,g);
+        const sh=new THREE.Shape();sh.moveTo(-d/2-0.18,0);sh.lineTo(d/2+0.18,0);sh.lineTo(0,0.4);sh.lineTo(-d/2-0.18,0);const rg=new THREE.ExtrudeGeometry(sh,{depth:w+0.3,bevelEnabled:false});rg.translate(0,0,-(w+0.3)/2);rg.rotateY(Math.PI/2);
+        const rm=new THREE.Mesh(rg,mat(0x2f3436));rm.position.set(0,b+hw,0);rm.castShadow=rm.receiveShadow=true;g.add(rm);
+        if(it.props.glass)bx(Math.max(0.4,w-1.2),hw*0.75,0.02,0x24404a,-0.3,b+hw*0.5,d/2+0.011,g,{roughness:.1,metalness:.3});
+        bx(0.7,1.9,0.03,0x5a3520,w/2-0.5,b+0.95,d/2+0.015,g);
+        if(it.props.heater==='wood'){const ch=new THREE.Mesh(new THREE.CylinderGeometry(0.08,0.08,1.2,16),mat(0x2a2a2a,{metalness:.7,roughness:.4}));ch.position.set(w/2-0.41,b+hw+0.6,-d/2+0.39);ch.castShadow=true;g.add(ch)}}}
+    else if(it.type==='plunge'){const p=plungeLevels(it),rim=p.rim+(it.props.mount==='sunk'?0.04:0),h=rim-p.bottom;
+      if(isRound(it)){const m=new THREE.Mesh(new THREE.CylinderGeometry(w/2,w/2,h,40,1,true),mat(0x6b4a30,{side:THREE.DoubleSide}));m.position.y=p.bottom+h/2;m.castShadow=true;g.add(m);
+        const wt=new THREE.Mesh(new THREE.CircleGeometry(w/2-0.05,40),mat(0x3d8ea3,{roughness:.15,metalness:.1}));wt.rotation.x=-Math.PI/2;wt.position.y=rim-0.08;g.add(wt);
+        const rimm=new THREE.Mesh(new THREE.TorusGeometry(w/2-0.02,0.03,8,40),mat(0x4a3423));rimm.rotation.x=Math.PI/2;rimm.position.y=rim;g.add(rimm)}
+      else{const t=0.06;bx(w,h,t,0x55606a,0,p.bottom+h/2,-d/2+t/2,g);bx(w,h,t,0x55606a,0,p.bottom+h/2,d/2-t/2,g);bx(t,h,d,0x55606a,-w/2+t/2,p.bottom+h/2,0,g);bx(t,h,d,0x55606a,w/2-t/2,p.bottom+h/2,0,g);
+        bx(w-2*t,0.01,d-2*t,0x3d8ea3,0,rim-0.08,0,g,{roughness:.15,metalness:.1})}}
+    else if(it.type==='shower'){const b=itemBase(it);bx(0.1,it.h,0.1,0x8a8f93,-w/2+0.1,b+it.h/2,0,g,{metalness:.6,roughness:.35});bx(0.45,0.04,0.04,0x8a8f93,-w/2+0.3,b+it.h-0.02,0,g,{metalness:.6,roughness:.35});
+      const hd=new THREE.Mesh(new THREE.CylinderGeometry(0.12,0.12,0.03,20),mat(0x9aa0a4,{metalness:.7,roughness:.3}));hd.position.set(-w/2+0.5,b+it.h-0.06,0);g.add(hd);bx(w,0.03,d,0x6f6f6f,0,b+0.015,0,g)}
+    else{const b=itemBase(it),col={bench:0x9b7350,hut:0x6a7f86,store:0x6b4a30,paving:0xb9b5aa}[it.type]||0x888888;
+      if(it.type==='paving'){const h=0.06,gr=groundAt(it.x,it.y);bx(w,h,d,col,0,gr+h/2-0.02,0,g)}
+      else bx(w,it.h,d,col,0,b+it.h/2,0,g)}
+  }
+  // services just above ground
+  for(const sv of S.services){if(sv.pts.length<2)continue;const pts=sv.pts.map(p=>new THREE.Vector3(p[0],groundAt(p[0],p[1])+0.03,p[1]));
+    const col={mains:0x1f6fd1,drain:0x7a5a2b,power:0xd97a00}[sv.kind];for(let i=1;i<pts.length;i++){const a=pts[i-1],b=pts[i],len=a.distanceTo(b),m=new THREE.Mesh(new THREE.CylinderGeometry(0.03,0.03,len,8),mat(col));
+      m.position.copy(a).add(b).multiplyScalar(0.5);m.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),b.clone().sub(a).normalize());G.add(m)}}
+  // sun & sky
+  const sp=sunPos(localToUTC(S.site.date,S.site.time),S.site.lat,S.site.lon),day=sp.alt>0;
+  const t=(S.site.north+sp.az)*D2R,alt=Math.max(sp.alt,2)*D2R;
+  if(!V3.target){const xs=[],ys=[];S.items.forEach(i=>corners(i).forEach(c=>{xs.push(c[0]);ys.push(c[1])}));const cx=xs.length?(Math.min(...xs)+Math.max(...xs))/2:0,cy=ys.length?(Math.min(...ys)+Math.max(...ys))/2:0;V3.target=new THREE.Vector3(cx,groundAt(cx,cy)+0.8,cy)}
+  const T=V3.target;V3.sun.position.set(T.x+Math.sin(t)*Math.cos(alt)*40,T.y+Math.sin(alt)*40,T.z-Math.cos(t)*Math.cos(alt)*40);V3.sun.target.position.copy(T);
+  V3.sun.intensity=day?0.55+0.6*Math.min(1,sp.alt/35):0.08;V3.hemi.intensity=day?0.6:0.25;
+  const sky=day?(dark?0x2b4b5c:0xbcd3dd):0x14202a;V3.scene.background=new THREE.Color(sky);V3.scene.fog=new THREE.Fog(sky,40,95);
+  V3.dirty=false;draw3D();
+}
+function draw3D(){if(!V3.init||!V3.target)return;const el=$('#view3d'),W=el.clientWidth,H=el.clientHeight;if(!W||!H)return;V3.r.setSize(W,H,false);V3.cam.aspect=W/H;V3.cam.updateProjectionMatrix();
+  const o=V3.orb,T=V3.target;V3.cam.position.set(T.x+o.r*Math.sin(o.ph)*Math.sin(o.th),T.y+o.r*Math.cos(o.ph),T.z+o.r*Math.sin(o.ph)*Math.cos(o.th));V3.cam.lookAt(T);V3.r.render(V3.scene,V3.cam)}
+
+/* ---------- boot ---------- */
+S=load()||example();
+window.addEventListener('resize',()=>{renderPlan()});
+new ResizeObserver(()=>renderPlan()).observe($('#stage'));
+$('#loc').innerHTML=`North Landing, Flamborough · <a href="https://www.google.com/maps/@${S.site.lat},${S.site.lon},120m/data=!3m1!1e3" target="_blank" rel="noopener">${fx(S.site.lat,4)}°N ${fx(Math.abs(S.site.lon),4)}°W</a>`;
+undoStack.push(JSON.stringify(Object.assign({},S,{bg:S.bg?Object.assign({},S.bg,{src:'#'}):null})));
+renderAll();requestAnimationFrame(fit);
+</script>
+</body>
+</html>
